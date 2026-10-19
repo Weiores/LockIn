@@ -34,10 +34,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.lockin.app.ui.focushub.FocusHubScreen
 import com.lockin.app.ui.theme.AccentBlue
 import com.lockin.app.ui.theme.SurfaceDark
 import com.lockin.app.ui.theme.TextSecondary
+import com.lockin.app.ui.timer.ActiveSessionOverlay
 
 private data class BottomNavItem(
     val route: Screen,
@@ -116,7 +118,20 @@ fun LockInNavGraph() {
             exitTransition = { fadeOut() },
         ) {
             composable<Screen.FocusHub> {
-                FocusHubScreen()
+                FocusHubScreen(
+                    onNavigateToActiveSession = { sessionId ->
+                        navController.navigate(Screen.ActiveSession(sessionId))
+                    },
+                )
+            }
+            composable<Screen.ActiveSession> { backStackEntry ->
+                val route = backStackEntry.toRoute<Screen.ActiveSession>()
+                ActiveSessionOverlay(
+                    sessionId = route.sessionId,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                )
             }
             composable<Screen.TriggerVault> {
                 // Placeholder — Phase 4

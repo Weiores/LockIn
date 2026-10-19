@@ -59,6 +59,14 @@
                 android:value="Study timer with hardware sensor monitoring for deep-work sessions" />
         </service>
 
+        <receiver
+            android:name=".service.TimerAlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.lockin.app.ACTION_ALARM_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

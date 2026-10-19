@@ -60,3 +60,4 @@ com.lockin.app/
 
 ## 📄 License
 MIT License. Built for university students seeking deep focus.
+
