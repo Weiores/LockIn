@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">LockIn</string>
+    <string name="timer_notification_channel_name">Study Timer</string>
+    <string name="timer_notification_channel_description">Persistent notification for active study sessions</string>
+    <string name="general_notification_channel_name">LockIn Alerts</string>
+    <string name="general_notification_channel_description">Study zone prompts and reminders</string>
+</resources>
