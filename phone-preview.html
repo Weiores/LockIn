@@ -4,11 +4,14 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 <title>LockIn — S24 Ultra Full Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;min-height:100vh;}
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-feature-settings:"cv02","cv03","cv04","cv11","tnum" 1; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1, "lnum" 1; font-variant-numeric:tabular-nums lining-nums;
     background:#0A0D14;
     color:#0B1526;
     -webkit-font-smoothing:antialiased;
@@ -19,6 +22,19 @@
     padding:14px 6px;
     user-select:none;
   }
+
+  
+  button, input, select, textarea, .timer, .page-title, h1, h2, h3, h4, .metric .v, .bcol .d, .chip, .mchip, .keyrow .name, .dur, .tab, .ends, .eyebrow, .badge, .field, .sub, .st, .body, .hint, .nav .item, .pct, .streak, .ghost, .ghost2, .modal-box, .courserow {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  .bcol { cursor: pointer; transition: background .15s; }
+  .bcol:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .day-breakdown-card { animation: fadeInBreakdown .2s ease-out; }
+  @keyframes fadeInBreakdown { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+  .mod-breakdown-row { display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--ink2); }
+  .mod-breakdown-row .bar-track { flex: 1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--ink) 7%, transparent); overflow: hidden; }
+  .mod-breakdown-row .bar-fill { height: 100%; border-radius: 2px; transition: width .25s ease; }
+  .mod-breakdown-row .val { font-weight: 600; color: var(--ink); min-width: 28px; text-align: right; }
 
   /* ---------------------------------------------------------------- tokens */
   body[data-mode="light"]{
@@ -416,8 +432,8 @@
       <button onclick="switchScreen('vault')" id="tab-vault">Vault</button>
       <button onclick="switchScreen('analytics')" id="tab-analytics">Analytics</button>
       <button onclick="switchScreen('notes')" id="tab-notes">Notes</button>
-      <button onclick="switchScreen('qr')" id="tab-qr" class="special">📷 QR</button>
-      <button onclick="switchScreen('nfc')" id="tab-nfc" class="special-nfc">💳 NFC</button>
+      <button onclick="switchScreen('qr')" id="tab-qr" class="special">[o_o] QR</button>
+      <button onclick="switchScreen('nfc')" id="tab-nfc" class="special-nfc">(~_~) NFC</button>
     </div>
 
     <div class="top-right">
@@ -426,7 +442,7 @@
         <button class="sw green" data-accent="green" aria-label="Green"></button>
         <button class="sw red" data-accent="red" aria-label="Red"></button>
       </div>
-      <button class="mode-toggle" id="modeBtn" onclick="toggleMode()">☀️ Light</button>
+      <button class="mode-toggle" id="modeBtn" onclick="toggleMode()">(•‿•) Light</button>
     </div>
   </div>
 
@@ -459,7 +475,7 @@
           <div class="hdr-right">
             <!-- Dark / Light Mode Button on Focus Hub Header (Fix 1) -->
             <div class="theme-toggle-btn" onclick="toggleMode()" title="Toggle Dark/Light Mode">
-              <span id="hubThemeIcon">🌙</span>
+              <span id="hubThemeIcon">(-_-)</span>
             </div>
             
             <div class="ringwrap">
@@ -681,15 +697,49 @@
 
         <!-- Last 7 Days Bar Chart -->
         <div class="card chart">
-          <div class="row"><span class="eyebrow">LAST 7 DAYS</span><span class="ends">hours</span></div>
-          <div class="bars">
-            <div class="bcol"><div class="b" style="height:38%"></div><span class="d">M</span></div>
-            <div class="bcol"><div class="b" style="height:62%"></div><span class="d">T</span></div>
-            <div class="bcol on"><div class="b" style="height:88%"></div><span class="d">W</span></div>
-            <div class="bcol"><div class="b" style="height:46%"></div><span class="d">T</span></div>
-            <div class="bcol"><div class="b" style="height:70%"></div><span class="d">F</span></div>
-            <div class="bcol"><div class="b" style="height:28%"></div><span class="d">S</span></div>
-            <div class="bcol"><div class="b" style="height:16%"></div><span class="d">S</span></div>
+          <div class="row">
+            <span class="eyebrow">LAST 7 DAYS</span>
+            <span class="ends" style="font-size:8.5px;color:var(--accent);">Tap bar for modules</span>
+          </div>
+          <div class="bars" id="weekBarsContainer">
+            <div class="bcol" onclick="selectDayBreakdown(0, this)"><div class="b" style="height:38%"></div><span class="d">M</span></div>
+            <div class="bcol" onclick="selectDayBreakdown(1, this)"><div class="b" style="height:62%"></div><span class="d">T</span></div>
+            <div class="bcol on" onclick="selectDayBreakdown(2, this)"><div class="b" style="height:88%"></div><span class="d">W</span></div>
+            <div class="bcol" onclick="selectDayBreakdown(3, this)"><div class="b" style="height:46%"></div><span class="d">T</span></div>
+            <div class="bcol" onclick="selectDayBreakdown(4, this)"><div class="b" style="height:70%"></div><span class="d">F</span></div>
+            <div class="bcol" onclick="selectDayBreakdown(5, this)"><div class="b" style="height:28%"></div><span class="d">S</span></div>
+            <div class="bcol" onclick="selectDayBreakdown(6, this)"><div class="b" style="height:16%"></div><span class="d">S</span></div>
+          </div>
+
+          <!-- Dynamic Per-Module Breakdown Container -->
+          <div class="day-breakdown-card" id="dayBreakdownPanel" style="margin-top:11px;padding-top:10px;border-top:1px solid var(--hair);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span id="breakdownDayTitle" style="font-size:10px;font-weight:700;color:var(--ink);">Wednesday · Oct 18 (Peak)</span>
+              <span id="breakdownDayTotal" style="font-size:9.5px;font-weight:700;color:var(--accent);">5.4h total</span>
+            </div>
+            <div id="breakdownModulesList" style="display:flex;flex-direction:column;gap:5px;">
+              <div class="mod-breakdown-row">
+                <span class="dot" style="background:var(--accent);"></span>
+                <span style="font-weight:600;color:var(--ink);">SC2008</span>
+                <span style="color:var(--ink3);">Networks</span>
+                <div class="bar-track"><div class="bar-fill" style="width:48%;background:var(--accent);"></div></div>
+                <span class="val">2.6h</span>
+              </div>
+              <div class="mod-breakdown-row">
+                <span class="dot" style="background:var(--mint);"></span>
+                <span style="font-weight:600;color:var(--ink);">SC2002</span>
+                <span style="color:var(--ink3);">OOP</span>
+                <div class="bar-track"><div class="bar-fill" style="width:33%;background:var(--mint);"></div></div>
+                <span class="val">1.8h</span>
+              </div>
+              <div class="mod-breakdown-row">
+                <span class="dot" style="background:var(--amber);"></span>
+                <span style="font-weight:600;color:var(--ink);">SC2006</span>
+                <span style="color:var(--ink3);">Software Eng</span>
+                <div class="bar-track"><div class="bar-fill" style="width:19%;background:var(--amber);"></div></div>
+                <span class="val">1.0h</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -825,7 +875,7 @@
           <div class="hint">Align barcode in frame</div>
           <div style="display:flex;gap:8px;">
             <div class="ghost2"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Torch off</div>
-            <div class="ghost2" style="background:var(--accent);color:#fff;" onclick="simulateVerified('Barcode Key: Desk Bottle')">Simulate Verified ✓</div>
+            <div class="ghost2" style="background:var(--accent);color:#fff;" onclick="simulateVerified('Barcode Key: Desk Bottle')">(^_^) Simulate Verified</div>
           </div>
         </div>
       </div>
@@ -855,7 +905,7 @@
           <h3>Hold card against back of phone</h3>
           <p>Student cards, transit cards and contactless payment cards</p>
           <div class="ready"><i></i>READER READY</div>
-          <div class="ghost2" style="margin-top:14px;background:var(--mint);color:#0B1526;font-weight:700;" onclick="simulateVerified('NFC Tag: Student ID (04:52:8A:1C)')">Simulate Tap Verified ✓</div>
+          <div class="ghost2" style="margin-top:14px;background:var(--mint);color:#0B1526;font-weight:700;" onclick="simulateVerified('NFC Tag: Student ID (04:52:8A:1C)')">(~_~) Simulate Tap Verified</div>
         </div>
       </div>
 
@@ -887,8 +937,8 @@
       <h3 style="margin:0 0 6px;font-size:16px;font-weight:700;color:var(--ink);">Register New Unlock Key</h3>
       <input type="text" id="newKeyNameInput" class="modal-input" placeholder="Key name (e.g. Gym Bottle, Bus Pass)" value="Gym Bottle"/>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-        <button onclick="registerNewHardwareKey('barcode')" style="border:0;background:var(--btn);color:var(--on-btn);padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;">📷 Pair Barcode / QR</button>
-        <button onclick="registerNewHardwareKey('nfc')" style="border:0;background:var(--mint);color:#0B1526;padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;">💳 Pair Contactless NFC Tag</button>
+        <button onclick="registerNewHardwareKey('barcode')" style="border:0;background:var(--btn);color:var(--on-btn);padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;">[o_o] Pair Barcode / QR</button>
+        <button onclick="registerNewHardwareKey('nfc')" style="border:0;background:var(--mint);color:#0B1526;padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;">(~_~) Pair Contactless NFC Tag</button>
         <button onclick="closeChoiceModal()" style="border:0;background:transparent;color:var(--ink3);padding:6px;font:inherit;font-size:11px;cursor:pointer;">Cancel</button>
       </div>
     </div>
@@ -916,6 +966,94 @@
   </div>
 
 <script>
+
+  // Study Analytics: Daily Breakdown Data by Module
+  const dailyBreakdownData = [
+    {
+      day: "Monday · Oct 16",
+      total: "2.4h",
+      modules: [
+        { code: "SC2008", name: "Networks", duration: "1.5h", pct: 62, color: "var(--accent)" },
+        { code: "SC2002", name: "OOP", duration: "0.9h", pct: 38, color: "var(--mint)" },
+      ]
+    },
+    {
+      day: "Tuesday · Oct 17",
+      total: "3.8h",
+      modules: [
+        { code: "SC2008", name: "Networks", duration: "2.0h", pct: 53, color: "var(--accent)" },
+        { code: "SC2006", name: "Software Eng", duration: "1.8h", pct: 47, color: "var(--amber)" },
+      ]
+    },
+    {
+      day: "Wednesday · Oct 18 (Peak)",
+      total: "5.4h",
+      modules: [
+        { code: "SC2008", name: "Networks", duration: "2.6h", pct: 48, color: "var(--accent)" },
+        { code: "SC2002", name: "OOP", duration: "1.8h", pct: 33, color: "var(--mint)" },
+        { code: "SC2006", name: "Software Eng", duration: "1.0h", pct: 19, color: "var(--amber)" },
+      ]
+    },
+    {
+      day: "Thursday · Oct 19",
+      total: "3.0h",
+      modules: [
+        { code: "SC2008", name: "Networks", duration: "1.8h", pct: 60, color: "var(--accent)" },
+        { code: "SC2002", name: "OOP", duration: "1.2h", pct: 40, color: "var(--mint)" },
+      ]
+    },
+    {
+      day: "Friday · Oct 20",
+      total: "4.3h",
+      modules: [
+        { code: "SC2002", name: "OOP", duration: "2.5h", pct: 58, color: "var(--mint)" },
+        { code: "SC2006", name: "Software Eng", duration: "1.8h", pct: 42, color: "var(--amber)" },
+      ]
+    },
+    {
+      day: "Saturday · Oct 21",
+      total: "1.8h",
+      modules: [
+        { code: "SC2008", name: "Networks", duration: "1.2h", pct: 67, color: "var(--accent)" },
+        { code: "SC2006", name: "Software Eng", duration: "0.6h", pct: 33, color: "var(--amber)" },
+      ]
+    },
+    {
+      day: "Sunday · Oct 22",
+      total: "1.0h",
+      modules: [
+        { code: "SC2008", name: "Networks", duration: "1.0h", pct: 100, color: "var(--accent)" },
+      ]
+    }
+  ];
+
+  function selectDayBreakdown(index, el) {
+    document.querySelectorAll('#weekBarsContainer .bcol').forEach(b => b.classList.remove('on'));
+    if (el) el.classList.add('on');
+
+    const data = dailyBreakdownData[index];
+    if (!data) return;
+
+    const titleEl = document.getElementById('breakdownDayTitle');
+    const totalEl = document.getElementById('breakdownDayTotal');
+    const listEl = document.getElementById('breakdownModulesList');
+
+    if (titleEl) titleEl.textContent = data.day;
+    if (totalEl) totalEl.textContent = data.total + ' total';
+
+    if (listEl) {
+      listEl.innerHTML = data.modules.map(m => '<div class="mod-breakdown-row">' +
+        '<span class="dot" style="background:' + m.color + ';"></span>' +
+        '<span style="font-weight:600;color:var(--ink);">' + m.code + '</span>' +
+        '<span style="color:var(--ink3);">' + m.name + '</span>' +
+        '<div class="bar-track">' +
+          '<div class="bar-fill" style="width:' + m.pct + '%;background:' + m.color + ';"></div>' +
+        '</div>' +
+        '<span class="val">' + m.duration + '</span>' +
+      '</div>').join('');
+    }
+  }
+
   let currentScreen = 'hub';
   let previousScreen = 'hub';
   const allScreenIds = ['hub', 'active', 'vault', 'analytics', 'notes', 'qr', 'nfc'];
@@ -969,8 +1107,8 @@
   function toggleMode() {
     const next = body.dataset.mode === 'light' ? 'dark' : 'light';
     body.dataset.mode = next;
-    modeBtn.textContent = next === 'light' ? '☀️ Light' : '🌙 Dark';
-    hubThemeIcon.textContent = next === 'light' ? '🌙' : '☀️';
+    modeBtn.textContent = next === 'light' ? '(•‿•) Light' : '(-_-) Dark';
+    hubThemeIcon.textContent = next === 'light' ? '(-_-)' : '(•‿•)';
   }
 
   // 2. Module Selection & Adding (Fix 2)
