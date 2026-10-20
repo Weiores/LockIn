@@ -41,6 +41,7 @@ class TimerForegroundService : Service() {
         const val EXTRA_SESSION_ID = "extra_session_id"
         const val EXTRA_DURATION_MS = "extra_duration_ms"
         const val EXTRA_TRIGGER_TYPE = "extra_trigger_type"
+        const val EXTRA_TRIGGER_VALUE = "extra_trigger_value"
         const val EXTRA_MODULE_CODE = "extra_module_code"
 
         fun startService(
@@ -49,12 +50,14 @@ class TimerForegroundService : Service() {
             durationMs: Long,
             triggerType: TriggerType,
             moduleCode: String? = null,
+            triggerValue: String? = null,
         ) {
             val intent = Intent(context, TimerForegroundService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_SESSION_ID, sessionId)
                 putExtra(EXTRA_DURATION_MS, durationMs)
                 putExtra(EXTRA_TRIGGER_TYPE, triggerType.name)
+                putExtra(EXTRA_TRIGGER_VALUE, triggerValue)
                 putExtra(EXTRA_MODULE_CODE, moduleCode)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -90,9 +93,10 @@ class TimerForegroundService : Service() {
                 val durationMs = intent.getLongExtra(EXTRA_DURATION_MS, 25 * 60 * 1000L)
                 val triggerTypeName = intent.getStringExtra(EXTRA_TRIGGER_TYPE) ?: TriggerType.MANUAL.name
                 val triggerType = TriggerType.valueOf(triggerTypeName)
+                val triggerValue = intent.getStringExtra(EXTRA_TRIGGER_VALUE)
                 val moduleCode = intent.getStringExtra(EXTRA_MODULE_CODE)
 
-                handleStart(sessionId, durationMs, triggerType, moduleCode)
+                handleStart(sessionId, durationMs, triggerType, moduleCode, triggerValue)
             }
             ACTION_PAUSE -> {
                 timerEngine.pauseTimer()
@@ -112,11 +116,12 @@ class TimerForegroundService : Service() {
         durationMs: Long,
         triggerType: TriggerType,
         moduleCode: String?,
+        triggerValue: String? = null,
     ) {
         wakeLock?.acquire(durationMs + 60_000L)
 
         // Post initial notification immediately for foreground service contract
-        val initialNotification = if (triggerType == TriggerType.FLIP) {
+        val initialNotification = if (triggerType == TriggerType.FLIP || triggerType == TriggerType.BARCODE || triggerType == TriggerType.NFC) {
             notificationHelper.buildArmingNotification(triggerType, moduleCode)
         } else {
             notificationHelper.buildTimerNotification(
@@ -138,7 +143,7 @@ class TimerForegroundService : Service() {
             },
         )
 
-        timerEngine.startTimer(sessionId, durationMs, triggerType, moduleCode)
+        timerEngine.startTimer(sessionId, durationMs, triggerType, moduleCode, triggerValue)
         observeTimerState(moduleCode)
     }
 

@@ -53,3 +53,4 @@ class HapticFeedbackHelper @Inject constructor(
         vibrator?.cancel()
     }
 }
+

@@ -1,5 +1,6 @@
 package com.lockin.app.ui.timer
 
+import android.app.Activity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -29,9 +30,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Contactless
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Warning
@@ -42,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -70,6 +74,7 @@ import com.lockin.app.ui.theme.AppleGreen
 import com.lockin.app.ui.theme.AppleOrange
 import com.lockin.app.ui.theme.AppleRed
 import com.lockin.app.ui.theme.LocalDarkTheme
+import com.lockin.app.ui.vault.components.CameraBarcodeScannerView
 
 @Composable
 fun ActiveSessionOverlay(
@@ -161,55 +166,151 @@ fun ActiveSessionOverlay(
                             }
                         }
 
-                        // Center: Flip to Lock Instruction & Animated Graphic
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(20.dp),
-                        ) {
-                            val infiniteTransition = rememberInfiniteTransition(label = "pulseArming")
-                            val pulseScale by infiniteTransition.animateFloat(
-                                initialValue = 0.95f,
-                                targetValue = 1.05f,
-                                animationSpec = infiniteRepeatable(
-                                    animation = tween(1200, easing = FastOutSlowInEasing),
-                                    repeatMode = RepeatMode.Reverse,
-                                ),
-                                label = "pulseScale",
-                            )
+                        // Center: Arming Instruction based on trigger type
+                        when (state.triggerType) {
+                            TriggerType.BARCODE -> {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        text = "Scan Checkpoint Barcode",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        text = "Point camera at your registered checkpoint item to begin.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
 
-                            Box(
-                                modifier = Modifier
-                                    .size(140.dp)
-                                    .scale(pulseScale)
-                                    .clip(CircleShape)
-                                    .background(AppleBlue.copy(alpha = if (isDark) 0.12f else 0.08f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.ScreenRotation,
-                                    contentDescription = "Place Phone Face-Down",
-                                    tint = AppleBlue,
-                                    modifier = Modifier.size(64.dp),
-                                )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(280.dp)
+                                            .clip(RoundedCornerShape(20.dp)),
+                                    ) {
+                                        CameraBarcodeScannerView { scannedValue ->
+                                            viewModel.checkScannedBarcode(scannedValue)
+                                        }
+                                    }
+                                }
                             }
+                            TriggerType.NFC -> {
+                                val activity = context as? Activity
+                                DisposableEffect(Unit) {
+                                    if (activity != null) {
+                                        viewModel.startNfcArmingListener(activity)
+                                    }
+                                    onDispose {
+                                        viewModel.stopNfcArmingListener()
+                                    }
+                                }
 
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(
-                                    text = "Flip to Lock In",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Text(
-                                    text = "Place your phone face-down on the desk.\nA haptic pulse will confirm your session start.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center,
-                                    lineHeight = 22.sp,
-                                )
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                                ) {
+                                    val infiniteTransition = rememberInfiniteTransition(label = "pulseNfcArming")
+                                    val pulseScale by infiniteTransition.animateFloat(
+                                        initialValue = 0.95f,
+                                        targetValue = 1.08f,
+                                        animationSpec = infiniteRepeatable(
+                                            animation = tween(1200, easing = FastOutSlowInEasing),
+                                            repeatMode = RepeatMode.Reverse,
+                                        ),
+                                        label = "nfcPulseScale",
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(140.dp)
+                                            .scale(pulseScale)
+                                            .clip(CircleShape)
+                                            .background(AppleGreen.copy(alpha = if (isDark) 0.15f else 0.10f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Contactless,
+                                            contentDescription = "Tap Card",
+                                            tint = AppleGreen,
+                                            modifier = Modifier.size(64.dp),
+                                        )
+                                    }
+
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text(
+                                            text = "Tap Registered Card",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            text = "Hold your student card or transit pass to the back of the phone to lock in.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center,
+                                            lineHeight = 22.sp,
+                                        )
+                                    }
+                                }
+                            }
+                            else -> {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                                ) {
+                                    val infiniteTransition = rememberInfiniteTransition(label = "pulseArming")
+                                    val pulseScale by infiniteTransition.animateFloat(
+                                        initialValue = 0.95f,
+                                        targetValue = 1.05f,
+                                        animationSpec = infiniteRepeatable(
+                                            animation = tween(1200, easing = FastOutSlowInEasing),
+                                            repeatMode = RepeatMode.Reverse,
+                                        ),
+                                        label = "pulseScale",
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(140.dp)
+                                            .scale(pulseScale)
+                                            .clip(CircleShape)
+                                            .background(AppleBlue.copy(alpha = if (isDark) 0.12f else 0.08f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.ScreenRotation,
+                                            contentDescription = "Place Phone Face-Down",
+                                            tint = AppleBlue,
+                                            modifier = Modifier.size(64.dp),
+                                        )
+                                    }
+
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text(
+                                            text = "Flip to Lock In",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            text = "Place your phone face-down on the desk.\nA haptic pulse will confirm your session start.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center,
+                                            lineHeight = 22.sp,
+                                        )
+                                    }
+                                }
                             }
                         }
 

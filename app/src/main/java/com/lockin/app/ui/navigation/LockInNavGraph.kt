@@ -40,6 +40,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.lockin.app.ui.focushub.FocusHubScreen
 import com.lockin.app.ui.timer.ActiveSessionOverlay
+import com.lockin.app.ui.vault.TriggerVaultScreen
 
 private data class BottomNavItem(
     val route: Screen,
@@ -136,7 +137,7 @@ fun LockInNavGraph() {
                 )
             }
             composable<Screen.TriggerVault> {
-                PlaceholderScreen(title = "Trigger Vault")
+                TriggerVaultScreen()
             }
             composable<Screen.Analytics> {
                 PlaceholderScreen(title = "Analytics")

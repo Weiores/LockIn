@@ -47,8 +47,12 @@ class TimerEngine @Inject constructor(
     private var totalDurationMs: Long = 0L
     private var sessionRemainingBeforeGraceMs: Long = 0L
     private var currentTriggerType: TriggerType = TriggerType.MANUAL
+    private var currentTriggerValue: String? = null
     private var currentModuleCode: String? = null
     private var breakCount: Int = 0
+
+    val activeTriggerValue: String?
+        get() = currentTriggerValue
 
     companion object {
         const val ACTION_ALARM_COMPLETED = "com.lockin.app.ACTION_ALARM_COMPLETED"
@@ -60,6 +64,7 @@ class TimerEngine @Inject constructor(
         durationMs: Long,
         triggerType: TriggerType,
         moduleCode: String? = null,
+        triggerValue: String? = null,
     ) {
         cancelAllJobs()
         cancelAlarm()
@@ -68,23 +73,51 @@ class TimerEngine @Inject constructor(
         currentSessionId = sessionId
         totalDurationMs = durationMs
         currentTriggerType = triggerType
+        currentTriggerValue = triggerValue
         currentModuleCode = moduleCode
         breakCount = 0
 
-        if (triggerType == TriggerType.FLIP) {
-            _timerState.value = TimerState.ArmingTrigger(
-                triggerType = TriggerType.FLIP,
-                moduleId = null,
-                plannedDurationMs = durationMs,
-            )
-            startFlipObserver()
-        } else {
-            targetEpochMs = System.currentTimeMillis() + durationMs
+        when (triggerType) {
+            TriggerType.FLIP -> {
+                _timerState.value = TimerState.ArmingTrigger(
+                    triggerType = TriggerType.FLIP,
+                    moduleId = null,
+                    plannedDurationMs = durationMs,
+                )
+                startFlipObserver()
+            }
+            TriggerType.BARCODE, TriggerType.NFC -> {
+                _timerState.value = TimerState.ArmingTrigger(
+                    triggerType = triggerType,
+                    moduleId = null,
+                    plannedDurationMs = durationMs,
+                )
+            }
+            else -> {
+                targetEpochMs = System.currentTimeMillis() + durationMs
+                _timerState.value = TimerState.ActiveLocked(
+                    sessionId = sessionId,
+                    remainingMs = durationMs,
+                    totalMs = durationMs,
+                    triggerType = triggerType,
+                    isPaused = false,
+                )
+                scheduleAlarm(targetEpochMs)
+                startTicker()
+            }
+        }
+    }
+
+    fun confirmTriggerUnlocked() {
+        val currentState = _timerState.value
+        if (currentState is TimerState.ArmingTrigger) {
+            hapticHelper.performLockSuccessHaptic()
+            targetEpochMs = System.currentTimeMillis() + totalDurationMs
             _timerState.value = TimerState.ActiveLocked(
-                sessionId = sessionId,
-                remainingMs = durationMs,
-                totalMs = durationMs,
-                triggerType = triggerType,
+                sessionId = currentSessionId,
+                remainingMs = totalDurationMs,
+                totalMs = totalDurationMs,
+                triggerType = currentTriggerType,
                 isPaused = false,
             )
             scheduleAlarm(targetEpochMs)

@@ -5,6 +5,7 @@ import android.hardware.SensorManager
 import androidx.core.content.getSystemService
 import com.lockin.app.hardware.flip.FlipDetector
 import com.lockin.app.hardware.haptics.HapticFeedbackHelper
+import com.lockin.app.hardware.nfc.NfcCardReader
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,4 +31,10 @@ object HardwareModule {
     @Singleton
     fun provideHapticFeedbackHelper(@ApplicationContext context: Context): HapticFeedbackHelper =
         HapticFeedbackHelper(context)
+
+    @Provides
+    @Singleton
+    fun provideNfcCardReader(@ApplicationContext context: Context): NfcCardReader =
+        NfcCardReader(context)
 }
+

@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.lockin.app.domain.model.CourseModule
 import com.lockin.app.domain.model.FailReason
 import com.lockin.app.domain.model.TimerState
+import com.lockin.app.domain.model.TriggerProfile
 import com.lockin.app.domain.model.TriggerType
 import com.lockin.app.domain.repository.ModuleRepository
 import com.lockin.app.domain.repository.PreferencesRepository
 import com.lockin.app.domain.repository.SessionRepository
+import com.lockin.app.domain.repository.TriggerRepository
 import com.lockin.app.domain.usecase.StartSessionUseCase
 import com.lockin.app.service.TimerEngine
 import com.lockin.app.service.TimerForegroundService
@@ -28,6 +30,7 @@ import javax.inject.Inject
 class FocusHubViewModel @Inject constructor(
     private val moduleRepository: ModuleRepository,
     private val sessionRepository: SessionRepository,
+    private val triggerRepository: TriggerRepository,
     private val preferencesRepository: PreferencesRepository,
     private val startSessionUseCase: StartSessionUseCase,
     private val timerEngine: TimerEngine,
@@ -41,6 +44,9 @@ class FocusHubViewModel @Inject constructor(
     val modules: StateFlow<List<CourseModule>> = moduleRepository.observeActiveModules()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val savedTriggers: StateFlow<List<TriggerProfile>> = triggerRepository.observeAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val _selectedModule = MutableStateFlow<CourseModule?>(null)
     val selectedModule: StateFlow<CourseModule?> = _selectedModule.asStateFlow()
 
@@ -49,6 +55,9 @@ class FocusHubViewModel @Inject constructor(
 
     private val _selectedTriggerType = MutableStateFlow(TriggerType.MANUAL)
     val selectedTriggerType: StateFlow<TriggerType> = _selectedTriggerType.asStateFlow()
+
+    private val _selectedTriggerProfile = MutableStateFlow<TriggerProfile?>(null)
+    val selectedTriggerProfile: StateFlow<TriggerProfile?> = _selectedTriggerProfile.asStateFlow()
 
     private val _streakDays = MutableStateFlow(0)
     val streakDays: StateFlow<Int> = _streakDays.asStateFlow()
@@ -99,6 +108,16 @@ class FocusHubViewModel @Inject constructor(
 
     fun selectTriggerType(triggerType: TriggerType) {
         _selectedTriggerType.value = triggerType
+        _selectedTriggerProfile.value = null
+    }
+
+    fun selectSavedTrigger(trigger: TriggerProfile) {
+        _selectedTriggerProfile.value = if (_selectedTriggerProfile.value?.id == trigger.id) null else trigger
+        if (_selectedTriggerProfile.value != null) {
+            _selectedTriggerType.value = trigger.type
+        } else {
+            _selectedTriggerType.value = TriggerType.MANUAL
+        }
     }
 
     fun startSession(
@@ -110,11 +129,13 @@ class FocusHubViewModel @Inject constructor(
             val moduleId = _selectedModule.value?.id
             val moduleCode = _selectedModule.value?.code
             val trigger = _selectedTriggerType.value
+            val triggerValue = _selectedTriggerProfile.value?.value
 
             val sessionId = startSessionUseCase(
                 moduleId = moduleId,
                 durationMs = durationMs,
                 triggerType = trigger,
+                triggerValue = triggerValue,
             )
 
             TimerForegroundService.startService(
@@ -123,6 +144,7 @@ class FocusHubViewModel @Inject constructor(
                 durationMs = durationMs,
                 triggerType = trigger,
                 moduleCode = moduleCode,
+                triggerValue = triggerValue,
             )
 
             onSessionStarted(sessionId)

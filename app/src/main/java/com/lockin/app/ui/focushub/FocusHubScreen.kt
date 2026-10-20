@@ -29,11 +29,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Contactless
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Wifi
@@ -85,6 +88,8 @@ fun FocusHubScreen(
     val selectedModule by viewModel.selectedModule.collectAsState()
     val selectedDurationMinutes by viewModel.selectedDurationMinutes.collectAsState()
     val selectedTriggerType by viewModel.selectedTriggerType.collectAsState()
+    val selectedTriggerProfile by viewModel.selectedTriggerProfile.collectAsState()
+    val savedTriggers by viewModel.savedTriggers.collectAsState()
     val streakDays by viewModel.streakDays.collectAsState()
 
     val isSessionActive = timerState is TimerState.ActiveLocked ||
@@ -224,7 +229,7 @@ fun FocusHubScreen(
                     )
 
                     triggerModes.forEach { (type, label, icon) ->
-                        val isSelected = selectedTriggerType == type
+                        val isSelected = selectedTriggerProfile == null && selectedTriggerType == type
                         val chipBg by animateColorAsState(
                             targetValue = if (isSelected) {
                                 MaterialTheme.colorScheme.primary
@@ -262,6 +267,54 @@ fun FocusHubScreen(
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     color = chipTextColor,
                                 )
+                            }
+                        }
+                    }
+                }
+
+                // Saved Physical Keys (Barcode & NFC Card)
+                if (savedTriggers.isNotEmpty()) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        items(savedTriggers) { trigger ->
+                            val isSelected = selectedTriggerProfile?.id == trigger.id
+                            val chipBg by animateColorAsState(
+                                targetValue = if (isSelected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
+                                },
+                                animationSpec = spring(),
+                                label = "savedKeyBg",
+                            )
+                            val chipTextColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(chipBg)
+                                    .clickable { viewModel.selectSavedTrigger(trigger) }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = if (trigger.type == TriggerType.BARCODE) Icons.Filled.QrCodeScanner else Icons.Filled.Contactless,
+                                        contentDescription = trigger.label,
+                                        tint = chipTextColor,
+                                        modifier = Modifier.size(15.dp),
+                                    )
+                                    Text(
+                                        text = trigger.label,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = chipTextColor,
+                                    )
+                                }
                             }
                         }
                     }
@@ -520,15 +573,27 @@ fun FocusHubScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        val ctaIcon = when {
+                            selectedTriggerProfile?.type == TriggerType.BARCODE -> Icons.Filled.QrCodeScanner
+                            selectedTriggerProfile?.type == TriggerType.NFC -> Icons.Filled.Contactless
+                            selectedTriggerType == TriggerType.FLIP -> Icons.Filled.ScreenRotation
+                            else -> Icons.Filled.Lock
+                        }
+                        val ctaText = when {
+                            selectedTriggerProfile != null -> "Arm ${selectedTriggerProfile!!.label}"
+                            selectedTriggerType == TriggerType.FLIP -> "Arm Flip to Lock"
+                            else -> "Start & Lock In"
+                        }
+
                         Icon(
-                            imageVector = if (selectedTriggerType == TriggerType.FLIP) Icons.Filled.ScreenRotation else Icons.Filled.Lock,
+                            imageVector = ctaIcon,
                             contentDescription = "Lock In",
                             tint = Color.White,
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (selectedTriggerType == TriggerType.FLIP) "Arm Flip to Lock" else "Start & Lock In",
+                            text = ctaText,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,

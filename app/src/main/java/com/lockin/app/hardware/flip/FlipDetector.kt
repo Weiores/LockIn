@@ -101,3 +101,4 @@ class FlipDetector @Inject constructor(
         }
     }.distinctUntilChanged()
 }
+
