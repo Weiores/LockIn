@@ -16,7 +16,7 @@
     flex-direction:column;
     align-items:center;
     justify-content:flex-start;
-    padding:16px 8px;
+    padding:14px 6px;
     user-select:none;
   }
 
@@ -50,7 +50,7 @@
 
   /* ------------------------------------------------------------- top controls */
   .top-ctrl{
-    width:100%;max-width:440px;margin-bottom:14px;
+    width:100%;max-width:440px;margin-bottom:12px;
     background:#141824;border:1px solid rgba(255,255,255,.1);border-radius:18px;
     padding:8px 12px;display:flex;align-items:center;justify-content:space-between;
     flex-wrap:wrap;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);
@@ -78,10 +78,10 @@
   .phone-s24{
     width:min(392px, 96vw);
     height:min(845px, 92vh);
-    border-radius:20px; /* S24 Ultra sharp boxy corners */
+    border-radius:20px;
     background:#171920;
     padding:9px;
-    border:3.5px solid #353945; /* Titanium flat border */
+    border:3.5px solid #353945;
     box-shadow:0 28px 65px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.12);
     display:flex;flex-direction:column;position:relative;overflow:hidden;
   }
@@ -119,9 +119,15 @@
   .hdr h1{margin:0;font-size:29px;line-height:1.06;font-weight:400;letter-spacing:-1.1px;color:var(--hdr);}
   .hdr p{margin:3px 0 0;font-size:11.5px;color:color-mix(in srgb,var(--hdr) 75%,transparent);}
   .hdr-right{display:flex;align-items:center;gap:8px;}
-  .gear{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;
-    background:color-mix(in srgb,var(--hdr) 16%,transparent);
-    color:color-mix(in srgb,var(--hdr) 88%,transparent);cursor:pointer;}
+  
+  /* Focus Hub Dark/Light Mode Button */
+  .theme-toggle-btn{
+    width:32px;height:32px;border-radius:11px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--hdr) 18%,transparent);
+    color:var(--hdr);cursor:pointer;font-size:14px;transition:transform .1s ease;
+  }
+  .theme-toggle-btn:active{transform:scale(0.92);}
+
   .ringwrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
   .ring{position:relative;width:40px;height:40px;}
   .ring .pct{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;
@@ -135,11 +141,11 @@
   .chip{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:999px;
     font-size:11px;font-weight:500;color:var(--hdr);
     background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.42);
-    white-space:nowrap;cursor:pointer;}
+    white-space:nowrap;cursor:pointer;transition:all .15s ease;}
   body[data-mode="dark"] .chip:not(.on){background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);}
   .chip i{width:5px;height:5px;border-radius:50%;background:currentColor;display:block;}
   .chip.on{background:var(--btn);color:var(--on-btn);border-color:transparent;font-weight:600;}
-  .chip.dash{background:transparent;border-style:dashed;border-color:color-mix(in srgb,var(--hdr) 38%,transparent);}
+  .chip.dash{background:transparent;border-style:dashed;border-color:color-mix(in srgb,var(--hdr) 45%,transparent);}
 
   /* ----------------------------------------------------------------- card */
   .card{background:var(--card);border-radius:24px;box-shadow:var(--shadow);
@@ -237,9 +243,8 @@
   .switch i{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:#fff;}
   .register{margin-top:10px;padding:11px;border-radius:999px;text-align:center;font-size:11px;
     font-weight:600;color:var(--ink2);border:1px dashed var(--hair);cursor:pointer;}
-  .note{margin-top:12px;padding:0 2px;font-size:9.5px;line-height:1.6;color:var(--ink3);}
 
-  /* --------------------------------- STUDY ANALYTICS (RESTORED IN FULL) */
+  /* --------------------------------- STUDY ANALYTICS (100% COMPLETE) */
   .metrics{display:flex;gap:7px;margin-top:14px;}
   .metric{flex:1;background:var(--card);border-radius:18px;padding:11px;
     box-shadow:var(--shadow);border:1px solid var(--hair2);}
@@ -255,7 +260,6 @@
   .bcol .d{font-size:8px;color:var(--ink3);font-weight:500;}
   .bcol.on .d{color:var(--ink);font-weight:600;}
   
-  /* 12-week heatmap grid */
   .heat{display:grid;grid-template-columns:repeat(12,1fr);gap:3.5px;margin-top:10px;}
   .heat i{aspect-ratio:1;border-radius:2.5px;display:block;}
   .courserow{display:flex;align-items:center;gap:7px;font-size:9.5px;color:var(--ink2);margin-top:9px;}
@@ -286,17 +290,21 @@
   .goalrow .gt{font-size:11.5px;line-height:1.45;color:var(--ink);flex:1;}
   .goalrow.done .gt{color:var(--ink3);text-decoration:line-through;}
   .goalrow .gdel{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;flex:none;
-    background:none;border:none;}
+    background:none;border:none;cursor:pointer;}
   .goalrow .gdel svg{width:11px;height:11px;stroke:var(--ink3);fill:none;stroke-width:1.8;
     stroke-linecap:round;stroke-linejoin:round;}
+  
   .addgoal{display:flex;align-items:center;gap:8px;margin-top:7px;}
-  .addgoal .field{flex:1;height:34px;border-radius:10px;background:color-mix(in srgb,var(--ink) 4%,transparent);
-    display:flex;align-items:center;padding:0 10px;font-size:11.5px;color:var(--ink3);}
-  body[data-mode="dark"] .addgoal .field{background:rgba(255,255,255,.06);}
+  .addgoal input.field{
+    flex:1;height:34px;border-radius:10px;background:color-mix(in srgb,var(--ink) 4%,transparent);
+    border:1px solid var(--hair2);outline:none;padding:0 10px;font:inherit;font-size:11.5px;color:var(--ink);
+  }
+  body[data-mode="dark"] .addgoal input.field{background:rgba(255,255,255,.06);}
   .addgoal .plus{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
     background:color-mix(in srgb,var(--accent) 14%,transparent);cursor:pointer;}
   .addgoal .plus svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:2.4;
     stroke-linecap:round;stroke-linejoin:round;}
+  
   .notecard{background:var(--card);border-radius:20px;padding:11px 13px;box-shadow:var(--shadow);
     border:1px solid var(--hair2);margin-top:9px;}
   .notecard .nb{font-size:11.5px;line-height:1.5;color:var(--ink);}
@@ -377,20 +385,39 @@
     width:90px;height:3px;border-radius:999px;background:rgba(0,0,0,.25);z-index:45;pointer-events:none;
   }
   body[data-mode="dark"] .gesture-bar{background:rgba(255,255,255,.3);}
+
+  /* Dialog / Modal */
+  .modal-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);
+    backdrop-filter:blur(4px);z-index:60;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-box{
+    background:var(--card);border-radius:24px;padding:20px;max-width:320px;width:100%;
+    text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.5);border:1px solid var(--hair2);
+  }
+  .modal-input{
+    width:100%;height:38px;border-radius:12px;background:color-mix(in srgb,var(--ink) 5%,transparent);
+    border:1px solid var(--hair2);padding:0 12px;font:inherit;font-size:12px;color:var(--ink);
+    margin-top:8px;outline:none;
+  }
+  .modal-btn{
+    width:100%;height:40px;border-radius:12px;border:0;background:var(--btn);color:var(--on-btn);
+    font:inherit;font-size:12px;font-weight:600;margin-top:10px;cursor:pointer;
+  }
 </style>
 </head>
 <body data-mode="light" data-accent="blue">
 
-  <!-- Top Controller Bar with Direct Access to All Screens -->
+  <!-- Top Controller Bar -->
   <div class="top-ctrl">
     <div class="screen-tabs">
       <button onclick="switchScreen('hub')" id="tab-hub" class="on">Today</button>
-      <button onclick="switchScreen('active')" id="tab-active">Timer Dial</button>
+      <button onclick="switchScreen('active')" id="tab-active">Timer</button>
       <button onclick="switchScreen('vault')" id="tab-vault">Vault</button>
       <button onclick="switchScreen('analytics')" id="tab-analytics">Analytics</button>
       <button onclick="switchScreen('notes')" id="tab-notes">Notes</button>
-      <button onclick="switchScreen('qr')" id="tab-qr" class="special">📷 QR Scanner</button>
-      <button onclick="switchScreen('nfc')" id="tab-nfc" class="special-nfc">💳 NFC Tap</button>
+      <button onclick="switchScreen('qr')" id="tab-qr" class="special">📷 QR</button>
+      <button onclick="switchScreen('nfc')" id="tab-nfc" class="special-nfc">💳 NFC</button>
     </div>
 
     <div class="top-right">
@@ -403,7 +430,7 @@
     </div>
   </div>
 
-  <!-- Samsung Galaxy S24 Ultra Device Chassis (19.5:9 aspect ratio, sharp boxy corners) -->
+  <!-- S24 Ultra Phone Chassis (19.5:9 aspect ratio) -->
   <div class="phone-s24" id="phoneChassis">
     <div class="screen">
       
@@ -430,9 +457,11 @@
             <p>Wed, Aug 6</p>
           </div>
           <div class="hdr-right">
-            <div class="gear" onclick="switchScreen('notes')" title="Settings / Notes">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+            <!-- Dark / Light Mode Button on Focus Hub Header (Fix 1) -->
+            <div class="theme-toggle-btn" onclick="toggleMode()" title="Toggle Dark/Light Mode">
+              <span id="hubThemeIcon">🌙</span>
             </div>
+            
             <div class="ringwrap">
               <div class="ring">
                 <svg width="40" height="40" viewBox="0 0 44 44">
@@ -441,33 +470,39 @@
                     stroke-linecap="round" pathLength="100" stroke-dasharray="58 100"
                     transform="rotate(-90 22 22)"/>
                 </svg>
-                <div class="pct">58%</div>
+                <div class="pct" id="ringGoalPct">58%</div>
               </div>
               <span class="cap">GOAL</span>
             </div>
           </div>
         </div>
 
-        <div class="chips">
-          <div class="chip on"><i></i>SC2008</div>
-          <div class="chip"><i></i>SC2002</div>
-          <div class="chip"><i></i>SC2006</div>
-          <div class="chip dash">+ Add</div>
+        <!-- Module Rail: Clickable Modules & Add Module Button (Fix 2) -->
+        <div class="chips" id="moduleChipsRail">
+          <div class="chip on" onclick="selectModule('SC2008', this)"><i></i>SC2008</div>
+          <div class="chip" onclick="selectModule('SC2002', this)"><i></i>SC2002</div>
+          <div class="chip" onclick="selectModule('SC2006', this)"><i></i>SC2006</div>
+          <div class="chip dash" onclick="openAddModuleModal()">+ Add</div>
         </div>
 
+        <!-- Focus Card -->
         <div class="card">
           <div class="row">
             <span class="eyebrow">TODAY'S FOCUS</span>
-            <span class="goalchip">
+            <span class="goalchip" id="cardGoalChip">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h9l-1 3 1 3H5"/><path d="M18 21V4"/></svg>
-              70m / 120m
+              <span id="cardGoalText">70m / 120m</span>
             </span>
           </div>
-          <h2>Computer Networks</h2>
-          <p class="body">Finish the socket programming problem set, then skim chapter 4 on congestion control.</p>
+          <h2 id="cardModuleTitle">Computer Networks</h2>
+          <p class="body" id="cardModuleDesc">Finish the socket programming problem set, then skim chapter 4 on congestion control.</p>
           <div class="meta">
-            <div class="durs"><span class="dur">25m</span><span class="dur on">50m</span><span class="dur">90m</span></div>
-            <span class="ends">Ends 4:30 PM</span>
+            <div class="durs">
+              <span class="dur" onclick="setSessionDuration(25, this)">25m</span>
+              <span class="dur on" onclick="setSessionDuration(50, this)">50m</span>
+              <span class="dur" onclick="setSessionDuration(90, this)">90m</span>
+            </div>
+            <span class="ends" id="cardEndTime">Ends 4:30 PM</span>
           </div>
           <div class="cta" onclick="startTimerSession()">
             Start Session
@@ -475,13 +510,15 @@
           </div>
         </div>
 
+        <!-- Lock Row -->
         <div class="lockrow">
           <span class="eyebrow">LOCK</span>
-          <span class="mchip on"><svg viewBox="0 0 24 24"><path d="M8 5l12 7-12 7V5z"/></svg>Manual</span>
-          <span class="mchip" onclick="switchScreen('qr')"><svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Barcode</span>
-          <span class="mchip" onclick="switchScreen('nfc')"><svg viewBox="0 0 24 24"><path d="M6 9a9 9 0 000 6M10 6.5a13 13 0 010 11M14 5a17 17 0 010 14"/></svg>Card</span>
+          <span class="mchip on" id="mchip-manual" onclick="setLockMode('manual', this)"><svg viewBox="0 0 24 24"><path d="M8 5l12 7-12 7V5z"/></svg>Manual</span>
+          <span class="mchip" id="mchip-barcode" onclick="setLockMode('barcode', this)"><svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Barcode</span>
+          <span class="mchip" id="mchip-card" onclick="setLockMode('card', this)"><svg viewBox="0 0 24 24"><path d="M6 9a9 9 0 000 6M10 6.5a13 13 0 010 11M14 5a17 17 0 010 14"/></svg>Card</span>
         </div>
 
+        <!-- 7-Day Timeline -->
         <div class="tl">
           <div class="tl-head">
             <span class="eyebrow">TIMELINE</span>
@@ -521,7 +558,7 @@
               <div class="center"><div class="time" id="countdownTime">42:18</div></div>
             </div>
 
-            <div class="pillrow" style="margin-top:12px;"><i></i>Studying: SC2008</div>
+            <div class="pillrow" style="margin-top:12px;"><i></i><span id="activeModuleBadge">Studying: SC2008</span></div>
 
             <div class="card" style="margin-top:12px;width:100%;">
               <div class="row">
@@ -529,13 +566,13 @@
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h9l-1 3 1 3H5"/><path d="M18 21V4"/></svg>
                   THIS WEEK'S GOAL
                 </span>
-                <span style="font-size:9.5px;font-weight:600;color:var(--accent);">71m / 120m</span>
+                <span style="font-size:9.5px;font-weight:600;color:var(--accent);" id="activeGoalNumbers">71m / 120m</span>
               </div>
-              <p class="body" style="margin-top:6px;">Finish the socket programming problem set</p>
+              <p class="body" id="activeGoalDesc" style="margin-top:6px;">Finish the socket programming problem set</p>
               <div style="margin-top:8px;height:4px;border-radius:999px;background:color-mix(in srgb,var(--ink) 8%,transparent);overflow:hidden;">
                 <div style="width:59%;height:100%;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 55%,transparent),var(--accent));"></div>
               </div>
-              <div style="margin-top:5px;font-size:9px;color:var(--ink3);">49m left to hit this week's target.</div>
+              <div style="margin-top:5px;font-size:9px;color:var(--ink3);">49m left to hit target.</div>
             </div>
           </div>
 
@@ -547,7 +584,7 @@
             <div class="unlock" style="width:100%;" onclick="switchScreen('qr')">
               <div class="l">
                 <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
-                Scan Barcode or NFC Card to Unlock
+                Unlock Early with Key
               </div>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
             </div>
@@ -567,49 +604,50 @@
         </div>
 
         <div class="sechead">
-          <span class="t">Saved Physical Keys</span>
-          <span class="badge">3 REGISTERED</span>
+          <span class="t">Physical Keys</span>
+          <span class="badge" id="vaultCountBadge">3 REGISTERED</span>
         </div>
 
-        <!-- Key 1: Optical Barcode Key -> Tapping opens QR Scanner -->
-        <div class="keyrow" onclick="switchScreen('qr')">
-          <div class="kicon" style="background:color-mix(in srgb,var(--accent) 11%,transparent);color:var(--accent);">
-            <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
+        <div id="vaultKeysContainer">
+          <!-- Key 1: Optical Barcode Key -->
+          <div class="keyrow" onclick="switchScreen('qr')">
+            <div class="kicon" style="background:color-mix(in srgb,var(--accent) 11%,transparent);color:var(--accent);">
+              <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
+            </div>
+            <div class="mid">
+              <div class="name">Desk Bottle (Optical)</div>
+              <div class="st"><i></i>Ready &middot; Barcode</div>
+            </div>
+            <div class="switch"><i></i></div>
           </div>
-          <div class="mid">
-            <div class="name">Desk Bottle (Optical)</div>
-            <div class="st"><i></i>Ready &middot; Tap to open scanner</div>
+
+          <!-- Key 2: Contactless NFC Card Key -->
+          <div class="keyrow" onclick="switchScreen('nfc')">
+            <div class="kicon" style="background:color-mix(in srgb,var(--mint) 11%,transparent);color:var(--mint);">
+              <svg viewBox="0 0 24 24"><path d="M6 9a9 9 0 000 6M10 6.5a13 13 0 010 11M14 5a17 17 0 010 14"/></svg>
+            </div>
+            <div class="mid">
+              <div class="name">Student ID</div>
+              <div class="st"><i></i>NFC &middot; 04:52:8A:1C</div>
+            </div>
+            <div class="switch"><i></i></div>
           </div>
-          <div class="switch"><i></i></div>
+
+          <!-- Key 3: Wi-Fi Zone -->
+          <div class="keyrow">
+            <div class="kicon" style="background:color-mix(in srgb,var(--violet) 11%,transparent);color:var(--violet);">
+              <svg viewBox="0 0 24 24"><path d="M3 12h18M6 12v4M12 12v4M18 12v4"/></svg>
+            </div>
+            <div class="mid">
+              <div class="name">Library L3 Wi-Fi</div>
+              <div class="st" style="color:var(--ink3);"><i style="background:var(--ink3);"></i>Zone &middot; idle</div>
+            </div>
+            <div class="switch" style="background:color-mix(in srgb,var(--ink) 14%,transparent);"><i style="right:auto;left:2px;"></i></div>
+          </div>
         </div>
 
-        <!-- Key 2: Contactless NFC Card Key -> Tapping opens NFC Tap -->
-        <div class="keyrow" onclick="switchScreen('nfc')">
-          <div class="kicon" style="background:color-mix(in srgb,var(--mint) 11%,transparent);color:var(--mint);">
-            <svg viewBox="0 0 24 24"><path d="M6 9a9 9 0 000 6M10 6.5a13 13 0 010 11M14 5a17 17 0 010 14"/></svg>
-          </div>
-          <div class="mid">
-            <div class="name">Student ID</div>
-            <div class="st"><i></i>NFC &middot; 04:52:8A:1C &middot; Tap to read</div>
-          </div>
-          <div class="switch"><i></i></div>
-        </div>
-
-        <!-- Key 3: Wi-Fi Zone -->
-        <div class="keyrow">
-          <div class="kicon" style="background:color-mix(in srgb,var(--violet) 11%,transparent);color:var(--violet);">
-            <svg viewBox="0 0 24 24"><path d="M3 12h18M6 12v4M12 12v4M18 12v4"/></svg>
-          </div>
-          <div class="mid">
-            <div class="name">Library L3 Wi-Fi</div>
-            <div class="st" style="color:var(--ink3);"><i style="background:var(--ink3);"></i>Zone &middot; idle</div>
-          </div>
-          <div class="switch" style="background:color-mix(in srgb,var(--ink) 14%,transparent);"><i style="right:auto;left:2px;"></i></div>
-        </div>
-
-        <div class="register" onclick="openChoiceModal()">+ &nbsp;Register New (Barcode or NFC)</div>
-
-        <div class="note">Keys only arm the lock or release it early — nothing interrupts a running session. No accelerometer or posture restrictions.</div>
+        <!-- Register button (Word count reduced) -->
+        <div class="register" onclick="openChoiceModal()">+ &nbsp;Register New Key</div>
       </div>
 
       <!-- ========================================================== -->
@@ -618,12 +656,11 @@
       <div id="view-analytics" class="scroll" style="display:none;">
         <div class="page-head">
           <h1 class="page-title">Study Analytics</h1>
-          <div class="skybtn" onclick="alert('Exporting session history CSV...')">
+          <div class="skybtn" onclick="alert('Exporting session history...')">
             <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
           </div>
         </div>
 
-        <!-- 3 Primary Metric Cards -->
         <div class="metrics">
           <div class="metric">
             <div class="v">24.5h</div>
@@ -642,7 +679,7 @@
           </div>
         </div>
 
-        <!-- Last 7 Days Interactive Bar Chart -->
+        <!-- Last 7 Days Bar Chart -->
         <div class="card chart">
           <div class="row"><span class="eyebrow">LAST 7 DAYS</span><span class="ends">hours</span></div>
           <div class="bars">
@@ -656,7 +693,7 @@
           </div>
         </div>
 
-        <!-- Last 12 Weeks 24-Square Study Heatmap + Course Breakdown -->
+        <!-- Last 12 Weeks 24-Square Heatmap + Course Breakdown -->
         <div class="card">
           <div class="row"><span class="eyebrow">LAST 12 WEEKS</span><span class="ends">avg 3.4h</span></div>
           <div class="heat">
@@ -693,7 +730,7 @@
       </div>
 
       <!-- ========================================================== -->
-      <!-- VIEW 5: WEEKLY NOTES & JOURNAL (RESTORED IN FULL)          -->
+      <!-- VIEW 5: WEEKLY NOTES (ADD GOALS & NOTES FULLY WORKING)     -->
       <!-- ========================================================== -->
       <div id="view-notes" class="scroll" style="display:none;">
         <div class="wkhdr">
@@ -713,51 +750,58 @@
         <div class="card" style="margin-top:8px;padding:14px 16px;">
           <div class="progwrap"><div class="prog"><i id="notesProgressBar" style="width:40%"></i></div></div>
 
-          <div class="goalrow done" onclick="toggleWeeklyGoal(this)">
-            <div class="gcheck on"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
-            <span class="gt">Finish SC2008 assignment 2</span>
-            <button class="gdel" onclick="event.stopPropagation();this.closest('.goalrow').remove();"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
-          </div>
-          <div class="goalrow done" onclick="toggleWeeklyGoal(this)">
-            <div class="gcheck on"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
-            <span class="gt">Read chapter 6 before Thursday</span>
-            <button class="gdel" onclick="event.stopPropagation();this.closest('.goalrow').remove();"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
-          </div>
-          <div class="goalrow" onclick="toggleWeeklyGoal(this)">
-            <div class="gcheck"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
-            <span class="gt">Three SC2008 sessions before Friday</span>
-            <button class="gdel" onclick="event.stopPropagation();this.closest('.goalrow').remove();"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
-          </div>
-          <div class="goalrow" onclick="toggleWeeklyGoal(this)">
-            <div class="gcheck"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
-            <span class="gt">Reply to the project supervisor</span>
-            <button class="gdel" onclick="event.stopPropagation();this.closest('.goalrow').remove();"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+          <div id="weeklyGoalsList">
+            <div class="goalrow done" onclick="toggleWeeklyGoal(this)">
+              <div class="gcheck on"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+              <span class="gt">Finish SC2008 assignment 2</span>
+              <button class="gdel" onclick="event.stopPropagation();deleteGoal(this)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+            </div>
+            <div class="goalrow done" onclick="toggleWeeklyGoal(this)">
+              <div class="gcheck on"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+              <span class="gt">Read chapter 6 before Thursday</span>
+              <button class="gdel" onclick="event.stopPropagation();deleteGoal(this)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+            </div>
+            <div class="goalrow" onclick="toggleWeeklyGoal(this)">
+              <div class="gcheck"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+              <span class="gt">Three SC2008 sessions before Friday</span>
+              <button class="gdel" onclick="event.stopPropagation();deleteGoal(this)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+            </div>
+            <div class="goalrow" onclick="toggleWeeklyGoal(this)">
+              <div class="gcheck"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+              <span class="gt">Reply to the project supervisor</span>
+              <button class="gdel" onclick="event.stopPropagation();deleteGoal(this)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+            </div>
           </div>
 
           <div class="carry">Bring 2 open goals from last week</div>
 
+          <!-- Add goal working input (Fix 2) -->
           <div class="addgoal">
-            <div class="field">Add a goal for this week&hellip;</div>
-            <div class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+            <input type="text" id="goalInput" class="field" placeholder="Add a goal for this week..." onkeydown="if(event.key==='Enter')addNewGoal();"/>
+            <div class="plus" onclick="addNewGoal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
           </div>
         </div>
 
         <div class="sechead" style="margin:12px 2px 2px"><div class="t">Notes</div>
-          <div class="badge">2 NOTES</div></div>
+          <div class="badge" id="notesCountBadge">2 NOTES</div></div>
 
-        <div class="notecard">
-          <div class="nb">Assignment 2 needs the circuit diagram redone — the topology numbering was wrong. Start with the packet tracer file.</div>
-          <div class="nf">TODAY &middot; 2:14 PM <i></i></div>
+        <div id="notesCardsList">
+          <div class="notecard">
+            <div class="nb">Assignment 2 circuit diagram redone — topology numbering was wrong. Packet tracer file ready.</div>
+            <div class="nf">TODAY &middot; 2:14 PM <i></i></div>
+          </div>
+          <div class="notecard">
+            <div class="nb">Week went sideways after Wednesday. Two sessions only — move OOP backlog into next week.</div>
+            <div class="nf">YESTERDAY &middot; 9:41 PM <i></i></div>
+          </div>
         </div>
-        <div class="notecard">
-          <div class="nb">Week went sideways after Wednesday. Two sessions only — move the OOP backlog into next week.</div>
-          <div class="nf">YESTERDAY &middot; 9:41 PM <i></i></div>
-        </div>
-        <div class="register" style="margin-top:10px;">+&nbsp;&nbsp;New note</div>
+
+        <!-- Add note working button (Fix 2) -->
+        <div class="register" style="margin-top:10px;" onclick="openAddNoteModal()">+&nbsp;&nbsp;New note</div>
       </div>
 
       <!-- ========================================================== -->
-      <!-- VIEW 6: OPTICAL BARCODE / QR SCANNER (RESTORED IN FULL)    -->
+      <!-- VIEW 6: OPTICAL BARCODE / QR SCANNER                       -->
       <!-- ========================================================== -->
       <div id="view-qr" class="scanner" style="display:none;">
         <div class="sbar">
@@ -778,7 +822,7 @@
         </div>
 
         <div class="sfoot">
-          <div class="hint">Point camera at barcode on your bottle, notebook or card</div>
+          <div class="hint">Align barcode in frame</div>
           <div style="display:flex;gap:8px;">
             <div class="ghost2"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Torch off</div>
             <div class="ghost2" style="background:var(--accent);color:#fff;" onclick="simulateVerified('Barcode Key: Desk Bottle')">Simulate Verified ✓</div>
@@ -787,7 +831,7 @@
       </div>
 
       <!-- ========================================================== -->
-      <!-- VIEW 7: CONTACTLESS NFC TAG TAP (RESTORED IN FULL)         -->
+      <!-- VIEW 7: CONTACTLESS NFC TAG TAP                            -->
       <!-- ========================================================== -->
       <div id="view-nfc" class="scanner" style="display:none;background:linear-gradient(180deg,#08110E 0%,#070C12 46%,#05080F 100%);">
         <div class="sbar">
@@ -800,7 +844,7 @@
 
         <div class="dead">
           <div class="feed" style="opacity:.45"></div>
-          <div class="shade" style="background:linear-gradient(180deg,rgba(5,8,15,.62),rgba(5,8,15,.9))"></div>
+          <div class="shade"></div>
           <div class="radar">
             <i class="ring"></i><i class="ring"></i><i class="ring"></i>
             <div class="core"><svg viewBox="0 0 24 24"><path d="M8.5 9.5a4 4 0 0 1 0 5M15.5 9.5a4 4 0 0 0 0 5"/><circle cx="12" cy="12" r="2.4"/></svg></div>
@@ -808,14 +852,14 @@
         </div>
 
         <div class="nfcbody">
-          <h3>Hold the card against the back of your phone</h3>
-          <p>Student cards, transit cards and contactless payment cards all work &mdash; LockIn only reads the hardware UID, never the balance or contents.</p>
+          <h3>Hold card against back of phone</h3>
+          <p>Student cards, transit cards and contactless payment cards</p>
           <div class="ready"><i></i>READER READY</div>
           <div class="ghost2" style="margin-top:14px;background:var(--mint);color:#0B1526;font-weight:700;" onclick="simulateVerified('NFC Tag: Student ID (04:52:8A:1C)')">Simulate Tap Verified ✓</div>
         </div>
       </div>
 
-      <!-- Floating Bottom Navigation Bar (4 Destinations) -->
+      <!-- Floating Bottom Navigation Bar -->
       <div class="nav" id="bottomNav">
         <div class="item on" id="nav-hub" onclick="switchScreen('hub')">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Focus Hub
@@ -837,16 +881,37 @@
     </div>
   </div>
 
-  <!-- Registration Choice Modal -->
-  <div id="choiceModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:60;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:var(--card);border-radius:24px;padding:20px;max-width:320px;width:100%;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.5);border:1px solid var(--hair2);">
+  <!-- Modal 1: Register New Key (Choice & Pairing) -->
+  <div id="choiceModal" class="modal-backdrop">
+    <div class="modal-box">
       <h3 style="margin:0 0 6px;font-size:16px;font-weight:700;color:var(--ink);">Register New Unlock Key</h3>
-      <p style="margin:0 0 16px;font-size:11.5px;color:var(--ink2);">Select hardware unlock sensor:</p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <button onclick="closeChoiceModal();switchScreen('qr');" style="border:0;background:var(--btn);color:var(--on-btn);padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;">📷 Optical Barcode / QR</button>
-        <button onclick="closeChoiceModal();switchScreen('nfc');" style="border:0;background:var(--mint);color:#0B1526;padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;">💳 Contactless NFC Tag</button>
+      <input type="text" id="newKeyNameInput" class="modal-input" placeholder="Key name (e.g. Gym Bottle, Bus Pass)" value="Gym Bottle"/>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        <button onclick="registerNewHardwareKey('barcode')" style="border:0;background:var(--btn);color:var(--on-btn);padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;">📷 Pair Barcode / QR</button>
+        <button onclick="registerNewHardwareKey('nfc')" style="border:0;background:var(--mint);color:#0B1526;padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;">💳 Pair Contactless NFC Tag</button>
         <button onclick="closeChoiceModal()" style="border:0;background:transparent;color:var(--ink3);padding:6px;font:inherit;font-size:11px;cursor:pointer;">Cancel</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Add Module Dialog -->
+  <div id="addModuleModal" class="modal-backdrop">
+    <div class="modal-box">
+      <h3 style="margin:0 0 6px;font-size:16px;font-weight:700;color:var(--ink);">Add Course Module</h3>
+      <input type="text" id="newModCode" class="modal-input" placeholder="Code (e.g. SC2005)"/>
+      <input type="text" id="newModName" class="modal-input" placeholder="Name (e.g. Operating Systems)"/>
+      <button class="modal-btn" onclick="saveNewModule()">Add Module</button>
+      <button onclick="closeAddModuleModal()" style="border:0;background:transparent;color:var(--ink3);padding:6px;margin-top:6px;font:inherit;font-size:11px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Modal 3: Add Note Dialog -->
+  <div id="addNoteModal" class="modal-backdrop">
+    <div class="modal-box">
+      <h3 style="margin:0 0 6px;font-size:16px;font-weight:700;color:var(--ink);">New Weekly Note</h3>
+      <textarea id="newNoteText" class="modal-input" style="height:70px;padding:8px 12px;resize:none;" placeholder="Write a note..."></textarea>
+      <button class="modal-btn" onclick="saveNewNote()">Save Note</button>
+      <button onclick="closeAddNoteModal()" style="border:0;background:transparent;color:var(--ink3);padding:6px;margin-top:6px;font:inherit;font-size:11px;cursor:pointer;">Cancel</button>
     </div>
   </div>
 
@@ -888,19 +953,182 @@
     switchScreen(previousScreen || 'hub');
   }
 
-  function openChoiceModal() {
-    document.getElementById('choiceModal').style.display = 'flex';
+  // Modals
+  function openChoiceModal() { document.getElementById('choiceModal').style.display = 'flex'; }
+  function closeChoiceModal() { document.getElementById('choiceModal').style.display = 'none'; }
+  function openAddModuleModal() { document.getElementById('addModuleModal').style.display = 'flex'; }
+  function closeAddModuleModal() { document.getElementById('addModuleModal').style.display = 'none'; }
+  function openAddNoteModal() { document.getElementById('addNoteModal').style.display = 'flex'; }
+  function closeAddNoteModal() { document.getElementById('addNoteModal').style.display = 'none'; }
+
+  // 1. Focus Hub Dark/Light Mode toggle (Fix 1)
+  const modeBtn = document.getElementById('modeBtn');
+  const hubThemeIcon = document.getElementById('hubThemeIcon');
+  const body = document.body;
+
+  function toggleMode() {
+    const next = body.dataset.mode === 'light' ? 'dark' : 'light';
+    body.dataset.mode = next;
+    modeBtn.textContent = next === 'light' ? '☀️ Light' : '🌙 Dark';
+    hubThemeIcon.textContent = next === 'light' ? '🌙' : '☀️';
   }
-  function closeChoiceModal() {
-    document.getElementById('choiceModal').style.display = 'none';
+
+  // 2. Module Selection & Adding (Fix 2)
+  const modulesDatabase = {
+    'SC2008': { title: 'Computer Networks', desc: 'Finish socket programming problem set, chapter 4 congestion control.', goal: '70m / 120m' },
+    'SC2002': { title: 'Object-Oriented Programming', desc: 'Lab 3 polymorphism exercises and design patterns.', goal: '45m / 90m' },
+    'SC2006': { title: 'Software Engineering', desc: 'Sprint backlog grooming, requirements specification and user stories.', goal: '30m / 60m' },
+  };
+
+  function selectModule(code, el) {
+    document.querySelectorAll('#moduleChipsRail .chip').forEach(c => c.classList.remove('on'));
+    if (el) el.classList.add('on');
+
+    const data = modulesDatabase[code] || { title: code, desc: `Study session for ${code}.`, goal: '0m / 60m' };
+    document.getElementById('cardModuleTitle').textContent = data.title;
+    document.getElementById('cardModuleDesc').textContent = data.desc;
+    document.getElementById('cardGoalText').textContent = data.goal;
+    document.getElementById('activeModuleBadge').textContent = `Studying: ${code}`;
+    document.getElementById('activeGoalDesc').textContent = data.title;
+  }
+
+  function saveNewModule() {
+    const code = document.getElementById('newModCode').value.trim().toUpperCase();
+    const name = document.getElementById('newModName').value.trim();
+    if (!code) return;
+
+    modulesDatabase[code] = {
+      title: name || code,
+      desc: `Weekly focus and problem sets for ${code}.`,
+      goal: '0m / 60m'
+    };
+
+    const rail = document.getElementById('moduleChipsRail');
+    const addBtn = rail.querySelector('.dash');
+    const newChip = document.createElement('div');
+    newChip.className = 'chip';
+    newChip.onclick = function() { selectModule(code, this); };
+    newChip.innerHTML = `<i></i>${code}`;
+    rail.insertBefore(newChip, addBtn);
+
+    selectModule(code, newChip);
+    document.getElementById('newModCode').value = '';
+    document.getElementById('newModName').value = '';
+    closeAddModuleModal();
+  }
+
+  // 3. Adding Notes & Goals (Fix 2)
+  function addNewGoal() {
+    const input = document.getElementById('goalInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const list = document.getElementById('weeklyGoalsList');
+    const newRow = document.createElement('div');
+    newRow.className = 'goalrow';
+    newRow.onclick = function() { toggleWeeklyGoal(this); };
+    newRow.innerHTML = `
+      <div class="gcheck"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+      <span class="gt">${text}</span>
+      <button class="gdel" onclick="event.stopPropagation();deleteGoal(this)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+    `;
+    list.appendChild(newRow);
+    input.value = '';
+    updateGoalsCounter();
+  }
+
+  function deleteGoal(btn) {
+    btn.closest('.goalrow').remove();
+    updateGoalsCounter();
+  }
+
+  function toggleWeeklyGoal(row) {
+    const check = row.querySelector('.gcheck');
+    row.classList.toggle('done');
+    check.classList.toggle('on');
+    updateGoalsCounter();
+  }
+
+  function updateGoalsCounter() {
+    const total = document.querySelectorAll('#weeklyGoalsList .goalrow').length;
+    const completed = document.querySelectorAll('#weeklyGoalsList .goalrow.done').length;
+    document.getElementById('notesGoalCount').textContent = completed;
+    document.getElementById('notesGoalBadge').textContent = `${completed} / ${total}`;
+    document.getElementById('notesProgressBar').style.width = `${total ? (completed / total) * 100 : 0}%`;
+  }
+
+  function openAddNoteModal() {
+    document.getElementById('addNoteModal').style.display = 'flex';
+  }
+
+  function saveNewNote() {
+    const text = document.getElementById('newNoteText').value.trim();
+    if (!text) return;
+
+    const list = document.getElementById('notesCardsList');
+    const card = document.createElement('div');
+    card.className = 'notecard';
+    const now = new Date();
+    const timeStr = `TODAY · ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    card.innerHTML = `
+      <div class="nb">${text}</div>
+      <div class="nf">${timeStr} <i></i></div>
+    `;
+    list.insertBefore(card, list.firstChild);
+    document.getElementById('newNoteText').value = '';
+    closeAddNoteModal();
+
+    const count = list.querySelectorAll('.notecard').length;
+    document.getElementById('notesCountBadge').textContent = `${count} NOTES`;
+  }
+
+  // 4. Register Barcode / NFC Keys (Fix 2)
+  let registeredKeysCount = 3;
+  function registerNewHardwareKey(type) {
+    const name = document.getElementById('newKeyNameInput').value.trim() || (type === 'barcode' ? 'Camera Key' : 'NFC Card');
+    closeChoiceModal();
+
+    if (type === 'barcode') {
+      switchScreen('qr');
+      window.pendingKeyRegistration = { type: 'barcode', name };
+    } else {
+      switchScreen('nfc');
+      window.pendingKeyRegistration = { type: 'nfc', name };
+    }
   }
 
   function simulateVerified(keyName) {
-    alert(`Success!\n\n${keyName}\n\nSession verified and unlocked.`);
+    if (window.pendingKeyRegistration) {
+      const { type, name } = window.pendingKeyRegistration;
+      window.pendingKeyRegistration = null;
+      
+      const container = document.getElementById('vaultKeysContainer');
+      const row = document.createElement('div');
+      row.className = 'keyrow';
+      row.onclick = function() { switchScreen(type === 'barcode' ? 'qr' : 'nfc'); };
+      row.innerHTML = `
+        <div class="kicon" style="background:${type === 'barcode' ? 'color-mix(in srgb,var(--accent) 11%,transparent)' : 'color-mix(in srgb,var(--mint) 11%,transparent)'};color:${type === 'barcode' ? 'var(--accent)' : 'var(--mint)'}">
+          ${type === 'barcode' ? '<svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M6 9a9 9 0 000 6M10 6.5a13 13 0 010 11M14 5a17 17 0 010 14"/></svg>'}
+        </div>
+        <div class="mid">
+          <div class="name">${name}</div>
+          <div class="st"><i></i>Registered &middot; ${type === 'barcode' ? 'Optical' : 'NFC Tag'}</div>
+        </div>
+        <div class="switch"><i></i></div>
+      `;
+      container.appendChild(row);
+      registeredKeysCount++;
+      document.getElementById('vaultCountBadge').textContent = `${registeredKeysCount} REGISTERED`;
+      alert(`Key registered: "${name}"`);
+      switchScreen('vault');
+      return;
+    }
+
+    alert(`Key Verified!\n\n${keyName}\n\nSession unlocked.`);
     switchScreen('hub');
   }
 
-  // Working Live Timer
+  // 5. Working Timer
   let timerInterval = null;
   let remainingSeconds = 42 * 60 + 18;
   let isTimerPaused = false;
@@ -936,45 +1164,31 @@
   }
 
   function confirmStopTimer() {
-    if (confirm('Stop Session? Ending early will cancel your study streak progress.')) {
+    if (confirm('Stop Session? Ending early will cancel your current study timer.')) {
       clearInterval(timerInterval);
       remainingSeconds = 50 * 60;
       switchScreen('hub');
     }
   }
 
-  // Weekly Goals Interactive Checkbox
-  let goalsCompleted = 2;
-  function toggleWeeklyGoal(row) {
-    const check = row.querySelector('.gcheck');
-    const isDone = row.classList.contains('done');
-
-    if (isDone) {
-      row.classList.remove('done');
-      check.classList.remove('on');
-      goalsCompleted--;
-    } else {
-      row.classList.add('done');
-      check.classList.add('on');
-      goalsCompleted++;
-    }
-
-    document.getElementById('notesGoalCount').textContent = goalsCompleted;
-    document.getElementById('notesGoalBadge').textContent = `${goalsCompleted} / 5`;
-    document.getElementById('notesProgressBar').style.width = `${(goalsCompleted / 5) * 100}%`;
+  function setSessionDuration(mins, el) {
+    document.querySelectorAll('.dur').forEach(d => d.classList.remove('on'));
+    el.classList.add('on');
+    remainingSeconds = mins * 60;
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + mins);
+    document.getElementById('cardEndTime').textContent = `Ends ${now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
   }
 
-  // Theme & Accent controls
-  const modeBtn = document.getElementById('modeBtn');
+  function setLockMode(mode, el) {
+    document.querySelectorAll('.lockrow .mchip').forEach(m => m.classList.remove('on'));
+    el.classList.add('on');
+    if (mode === 'barcode') switchScreen('qr');
+    if (mode === 'card') switchScreen('nfc');
+  }
+
+  // Accent Switcher
   const accentSeg = document.getElementById('accentSeg');
-  const body = document.body;
-
-  function toggleMode() {
-    const next = body.dataset.mode === 'light' ? 'dark' : 'light';
-    body.dataset.mode = next;
-    modeBtn.textContent = next === 'light' ? '☀️ Light' : '🌙 Dark';
-  }
-
   accentSeg.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-accent]');
     if (!btn) return;
@@ -982,7 +1196,7 @@
     [...accentSeg.children].forEach(b => b.classList.toggle('on', b === btn));
   });
 
-  // Clock
+  // Live Clock
   function updateLiveClock() {
     const now = new Date();
     const h = String(now.getHours()).padStart(2, '0');
