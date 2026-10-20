@@ -432,8 +432,8 @@
       <button onclick="switchScreen('vault')" id="tab-vault">Vault</button>
       <button onclick="switchScreen('analytics')" id="tab-analytics">Analytics</button>
       <button onclick="switchScreen('notes')" id="tab-notes">Notes</button>
-      <button onclick="switchScreen('qr')" id="tab-qr" class="special">[o_o] QR</button>
-      <button onclick="switchScreen('nfc')" id="tab-nfc" class="special-nfc">(~_~) NFC</button>
+      <button onclick="switchScreen('qr')" id="tab-qr" class="special">°❀ QR</button>
+      <button onclick="switchScreen('nfc')" id="tab-nfc" class="special-nfc">⋆.ೃ࿔* NFC</button>
     </div>
 
     <div class="top-right">
@@ -442,7 +442,7 @@
         <button class="sw green" data-accent="green" aria-label="Green"></button>
         <button class="sw red" data-accent="red" aria-label="Red"></button>
       </div>
-      <button class="mode-toggle" id="modeBtn" onclick="toggleMode()">(•‿•) Light</button>
+      <button class="mode-toggle" id="modeBtn" onclick="toggleMode()">☼ ⋆.ೃ Light</button>
     </div>
   </div>
 
@@ -475,7 +475,7 @@
           <div class="hdr-right">
             <!-- Dark / Light Mode Button on Focus Hub Header (Fix 1) -->
             <div class="theme-toggle-btn" onclick="toggleMode()" title="Toggle Dark/Light Mode">
-              <span id="hubThemeIcon">(-_-)</span>
+              <span id="hubThemeIcon">☽ ⋆.ೃ</span>
             </div>
             
             <div class="ringwrap">
@@ -875,7 +875,7 @@
           <div class="hint">Align barcode in frame</div>
           <div style="display:flex;gap:8px;">
             <div class="ghost2"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Torch off</div>
-            <div class="ghost2" style="background:var(--accent);color:#fff;" onclick="simulateVerified('Barcode Key: Desk Bottle')">(^_^) Simulate Verified</div>
+            <div class="ghost2" style="background:var(--accent);color:#fff;" onclick="simulateVerified('Barcode Key: Desk Bottle')">°❀ Verified ⋆.ೃ࿔*</div>
           </div>
         </div>
       </div>
@@ -905,7 +905,7 @@
           <h3>Hold card against back of phone</h3>
           <p>Student cards, transit cards and contactless payment cards</p>
           <div class="ready"><i></i>READER READY</div>
-          <div class="ghost2" style="margin-top:14px;background:var(--mint);color:#0B1526;font-weight:700;" onclick="simulateVerified('NFC Tag: Student ID (04:52:8A:1C)')">(~_~) Simulate Tap Verified</div>
+          <div class="ghost2" style="margin-top:14px;background:var(--mint);color:#0B1526;font-weight:700;" onclick="simulateVerified('NFC Tag: Student ID (04:52:8A:1C)')">⋆.ೃ࿔*:･ Tap Verified</div>
         </div>
       </div>
 
@@ -937,8 +937,8 @@
       <h3 style="margin:0 0 6px;font-size:16px;font-weight:700;color:var(--ink);">Register New Unlock Key</h3>
       <input type="text" id="newKeyNameInput" class="modal-input" placeholder="Key name (e.g. Gym Bottle, Bus Pass)" value="Gym Bottle"/>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-        <button onclick="registerNewHardwareKey('barcode')" style="border:0;background:var(--btn);color:var(--on-btn);padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;">[o_o] Pair Barcode / QR</button>
-        <button onclick="registerNewHardwareKey('nfc')" style="border:0;background:var(--mint);color:#0B1526;padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;">(~_~) Pair Contactless NFC Tag</button>
+        <button onclick="registerNewHardwareKey('barcode')" style="border:0;background:var(--btn);color:var(--on-btn);padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;">°❀ Pair Barcode / QR</button>
+        <button onclick="registerNewHardwareKey('nfc')" style="border:0;background:var(--mint);color:#0B1526;padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;">⋆.ೃ࿔* Pair Contactless NFC Tag</button>
         <button onclick="closeChoiceModal()" style="border:0;background:transparent;color:var(--ink3);padding:6px;font:inherit;font-size:11px;cursor:pointer;">Cancel</button>
       </div>
     </div>
@@ -1107,8 +1107,8 @@
   function toggleMode() {
     const next = body.dataset.mode === 'light' ? 'dark' : 'light';
     body.dataset.mode = next;
-    modeBtn.textContent = next === 'light' ? '(•‿•) Light' : '(-_-) Dark';
-    hubThemeIcon.textContent = next === 'light' ? '(-_-)' : '(•‿•)';
+    modeBtn.textContent = next === 'light' ? '☼ ⋆.ೃ Light' : '☽ ⋆.ೃ Dark';
+    hubThemeIcon.textContent = next === 'light' ? '☽ ⋆.ೃ' : '☼ °❀';
   }
 
   // 2. Module Selection & Adding (Fix 2)
