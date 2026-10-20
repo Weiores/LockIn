@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>LockIn — Interactive Phone Simulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <title>LockIn — Samsung Galaxy S24 Ultra (19.5:9) Phone Preview</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100%; }
+    html, body { margin: 0; padding: 0; min-height: 100vh; }
 
+    /* Daylight / Apple Glass Tokens */
     body[data-mode="light"] {
       --sky: #6E9CB6; --sky2: #A9C2D3; --mid: #DCE5EF; --paper: #FBFCFE;
       --card: #FFFFFF; --card2: #F6F8FC;
@@ -16,7 +17,6 @@
       --btn: #0B1526; --on-btn: #FFFFFF; --hdr: #FFFFFF;
       --hair: rgba(11,21,38,.08); --hair2: rgba(11,21,38,.05);
       --shadow: 0 18px 34px -18px rgba(11,21,38,.30), 0 2px 8px rgba(11,21,38,.05);
-      --frame-bg: #E2E6EE;
     }
 
     body[data-mode="dark"] {
@@ -26,39 +26,15 @@
       --btn: #EDF2FA; --on-btn: #0B1526; --hdr: #F4F8FF;
       --hair: rgba(255,255,255,.08); --hair2: rgba(255,255,255,.05);
       --shadow: 0 18px 34px -18px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.35);
-      --frame-bg: #090B10;
     }
 
-    /* Accents - Light */
-    body[data-mode="light"][data-accent="blue"] {
-      --accent: #3E6DF3; --accent-soft: #7C9BFA; --accent-deep: #2748C4;
-    }
-    body[data-mode="light"][data-accent="green"] {
-      --accent: #2E9E77; --accent-soft: #68C4A2; --accent-deep: #1F7657;
-      --sky: #6E9A8B; --sky2: #A9C4B8;
-    }
-    body[data-mode="light"][data-accent="red"] {
-      --accent: #DC4B52; --accent-soft: #EE868B; --accent-deep: #A82F36;
-      --sky: #9C8187; --sky2: #C9B6B9;
-    }
+    body[data-mode="light"][data-accent="blue"] { --accent: #3E6DF3; --accent-soft: #7C9BFA; }
+    body[data-mode="light"][data-accent="green"] { --accent: #2E9E77; --sky: #6E9A8B; --sky2: #A9C4B8; }
+    body[data-mode="light"][data-accent="red"] { --accent: #DC4B52; --sky: #9C8187; --sky2: #C9B6B9; }
 
-    /* Accents - Dark */
-    body[data-mode="dark"][data-accent="blue"] {
-      --accent: #6F93FF; --accent-soft: #9DB4FF; --accent-deep: #3E6DF3;
-    }
-    body[data-mode="dark"][data-accent="green"] {
-      --accent: #5CC49A; --accent-soft: #8FD9BB; --accent-deep: #2E9E77;
-    }
-    body[data-mode="dark"][data-accent="red"] {
-      --accent: #F06A70; --accent-soft: #F79BA0; --accent-deep: #C43F46;
-    }
-
-    :root {
-      --coral: #DC4B52;
-      --mint: #2E9E77;
-      --amber: #B47C1E;
-      --violet: #6B5CE0;
-    }
+    body[data-mode="dark"][data-accent="blue"] { --accent: #6F93FF; }
+    body[data-mode="dark"][data-accent="green"] { --accent: #5CC49A; }
+    body[data-mode="dark"][data-accent="red"] { --accent: #F06A70; }
 
     .screen-bg {
       background: linear-gradient(180deg,
@@ -70,7 +46,6 @@
         var(--paper) 100%
       );
     }
-
     .screen-bg::before {
       content: "";
       position: absolute;
@@ -81,100 +56,133 @@
 
     .card-glass {
       background: var(--card);
-      border-radius: 26px;
+      border-radius: 24px;
       box-shadow: var(--shadow);
       border: 1px solid var(--hair2);
-      transition: all 0.25s ease;
+      transition: all 0.2s ease;
     }
 
     .spring-btn:active {
       transform: scale(0.96);
     }
 
-    @keyframes sweep {
-      0%, 100% { top: 12px; }
-      50% { top: 216px; }
-    }
-    .scanner-laser {
-      animation: sweep 2.4s ease-in-out infinite;
+    /* S24 Ultra 19.5:9 Dimensions & Sharp Boxy Corner Geometry */
+    .s24-chassis {
+      width: min(404px, 94vw);
+      height: min(854px, 92vh);
+      border-radius: 20px; /* S24 Ultra sharp boxy corners */
+      padding: 10px;
+      background: #181A1F;
+      border: 3.5px solid #363A45; /* Titanium frame */
+      box-shadow: 0 25px 60px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.12);
     }
 
-    @keyframes sonar {
-      0% { transform: scale(0.35); opacity: 0.6; }
-      100% { transform: scale(1); opacity: 0; }
+    .s24-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Laser line sweep animation */
+    @keyframes laserSweep {
+      0%, 100% { top: 12px; }
+      50% { top: 200px; }
+    }
+    .laser-line {
+      position: absolute;
+      left: 10px; right: 10px; height: 2.5px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), #FFFFFF, var(--accent), transparent);
+      animation: laserSweep 2.2s ease-in-out infinite;
+    }
+
+    /* Sonar radar pulse animation */
+    @keyframes sonarPulse {
+      0% { transform: scale(0.3); opacity: 0.8; }
+      100% { transform: scale(1.1); opacity: 0; }
     }
     .sonar-ring {
-      animation: sonar 2.4s ease-out infinite;
+      position: absolute;
+      width: 200px; height: 200px; border-radius: 50%;
+      border: 1.5px solid var(--accent);
+      animation: sonarPulse 2.4s ease-out infinite;
     }
+    .sonar-ring:nth-child(2) { animation-delay: 0.8s; }
+    .sonar-ring:nth-child(3) { animation-delay: 1.6s; }
 
-    /* Hide scrollbars for clean phone aesthetic */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body data-mode="light" data-accent="blue" class="bg-[#0B0F19] text-[#E2E6F0] flex flex-col items-center justify-start min-h-screen p-4 select-none font-sans">
+<body data-mode="light" data-accent="blue" class="bg-[#0B0E17] text-[#E0E4EE] flex flex-col items-center justify-start min-h-screen p-3 md:p-6 select-none font-sans">
 
   <!-- Top Controller Toolbar -->
-  <div class="w-full max-w-xl mb-4 bg-[#141A28] border border-white/10 rounded-2xl p-2.5 shadow-xl flex items-center justify-between flex-wrap gap-2.5">
+  <div class="w-full max-w-2xl mb-4 bg-[#141824] border border-white/10 rounded-2xl p-2.5 shadow-xl flex items-center justify-between flex-wrap gap-2">
     <div class="flex items-center gap-1.5 flex-wrap">
-      <span class="text-xs font-bold text-white/50 uppercase tracking-wider px-1">Screen:</span>
-      <button onclick="goTo('hub')" id="top-hub" class="px-3 py-1 rounded-xl text-xs font-semibold bg-white text-[#0B0F19] transition">Focus</button>
-      <button onclick="goTo('active')" id="top-active" class="px-3 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Timer Dial</button>
-      <button onclick="goTo('vault')" id="top-vault" class="px-3 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Keys</button>
-      <button onclick="goTo('notes')" id="top-notes" class="px-3 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Notes</button>
-      <button onclick="goTo('analytics')" id="top-analytics" class="px-3 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Stats</button>
-      <button onclick="goTo('scanner')" id="top-scanner" class="px-3 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Scan</button>
+      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-widest bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+        Galaxy S24 Ultra (19.5:9)
+      </span>
+      <button onclick="goTo('hub')" id="top-hub" class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-white text-[#0B0F19] transition">Focus</button>
+      <button onclick="goTo('active')" id="top-active" class="px-2.5 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Timer Dial</button>
+      <button onclick="goTo('vault')" id="top-vault" class="px-2.5 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Keys</button>
+      <button onclick="goTo('scanner-qr')" id="top-scanner-qr" class="px-2.5 py-1 rounded-xl text-xs font-bold text-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 transition flex items-center gap-1">
+        <span>📷</span> QR/Barcode
+      </button>
+      <button onclick="goTo('scanner-nfc')" id="top-scanner-nfc" class="px-2.5 py-1 rounded-xl text-xs font-bold text-cyan-400 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 transition flex items-center gap-1">
+        <span>💳</span> NFC Tap
+      </button>
+      <button onclick="goTo('notes')" id="top-notes" class="px-2.5 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Notes</button>
+      <button onclick="goTo('analytics')" id="top-analytics" class="px-2.5 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Stats</button>
     </div>
 
+    <!-- Mode and Accent Switches -->
     <div class="flex items-center gap-2">
-      <!-- Accent switcher -->
-      <div class="flex items-center gap-1 bg-black/30 p-1 rounded-xl border border-white/10">
-        <button onclick="setAccent('blue')" id="acc-blue" class="w-4 h-4 rounded-full bg-[#3E6DF3] ring-2 ring-white"></button>
-        <button onclick="setAccent('green')" id="acc-green" class="w-4 h-4 rounded-full bg-[#2E9E77] ring-0"></button>
-        <button onclick="setAccent('red')" id="acc-red" class="w-4 h-4 rounded-full bg-[#DC4B52] ring-0"></button>
+      <div class="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10">
+        <button onclick="setAccent('blue')" id="acc-blue" class="w-4 h-4 rounded-full bg-[#3E6DF3] ring-2 ring-white" title="Blue"></button>
+        <button onclick="setAccent('green')" id="acc-green" class="w-4 h-4 rounded-full bg-[#2E9E77] ring-0" title="Green"></button>
+        <button onclick="setAccent('red')" id="acc-red" class="w-4 h-4 rounded-full bg-[#DC4B52] ring-0" title="Red"></button>
       </div>
 
-      <!-- Mode toggle -->
       <button onclick="toggleTheme()" id="theme-btn" class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition flex items-center gap-1.5 border border-white/10">
         <span id="theme-icon">☀️</span> <span id="theme-label">Light</span>
       </button>
     </div>
   </div>
 
-  <!-- Realistic Mobile Device Chassis (iPhone 16 Pro styling) -->
-  <div class="relative w-[375px] h-[780px] rounded-[52px] p-[11px] bg-[#1C1F26] shadow-2xl border-[4px] border-[#313642] ring-1 ring-white/15 flex flex-col overflow-hidden">
+  <!-- S24 Ultra Device Chassis (Responsive Auto-Fit) -->
+  <div class="relative s24-chassis flex flex-col overflow-hidden">
     
-    <!-- Phone Screen -->
-    <div id="phone-screen" class="relative w-full h-full rounded-[42px] overflow-hidden flex flex-col screen-bg transition-colors duration-300">
+    <!-- Flat 19.5:9 Screen -->
+    <div id="phone-screen" class="relative s24-screen screen-bg transition-colors duration-300">
       
-      <!-- iOS / Android Status Bar with Dynamic Island -->
-      <div class="relative z-40 w-full pt-3 px-6 pb-1 flex items-center justify-between text-xs font-semibold" style="color:var(--hdr);">
-        <span id="live-clock" class="tracking-tight text-[13px]">09:41</span>
+      <!-- S24 Ultra Status Bar with Centered Circular Camera Cutout -->
+      <div class="relative z-40 w-full pt-2.5 px-6 pb-1 flex items-center justify-between text-xs font-semibold" style="color:var(--hdr);">
+        <span id="live-clock" class="tracking-tight text-[12.5px]">09:41</span>
         
-        <!-- Dynamic Island Pill -->
-        <div class="w-24 h-6 rounded-full bg-black flex items-center justify-center px-2 gap-1.5 cursor-pointer shadow-md" onclick="toggleActiveIsland()">
-          <span id="island-dot" class="w-2 h-2 rounded-full bg-[#2E9E77]"></span>
-          <span id="island-text" class="text-[10px] font-bold text-white tracking-tight">LockIn</span>
+        <!-- S24 Ultra Centered Punch-Hole Camera -->
+        <div class="w-3.5 h-3.5 rounded-full bg-black ring-1 ring-white/20 flex items-center justify-center shadow-inner cursor-pointer" onclick="goTo('active')">
+          <div class="w-1.5 h-1.5 rounded-full bg-[#0D1828]"></div>
         </div>
 
         <div class="flex items-center gap-1.5 opacity-90">
-          <!-- 5G / Wifi -->
+          <span class="text-[10px] font-bold">5G</span>
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4z"/></svg>
-          <!-- Battery Pill -->
-          <div class="w-5 h-2.5 border border-current rounded-[3px] p-[1px] flex items-center">
+          <div class="w-4 h-2.5 border border-current rounded-[2px] p-[1px] flex items-center">
             <div class="w-full h-full bg-current rounded-[1px]"></div>
           </div>
         </div>
       </div>
 
-      <!-- MAIN SCROLLABLE VIEW CONTAINER -->
+      <!-- Scrollable App Content -->
       <div id="scroll-container" class="relative flex-1 overflow-y-auto no-scrollbar px-5 pt-1 pb-24 text-[var(--ink)]">
         
         <!-- ========================================================== -->
         <!-- SCREEN 1: FOCUS HUB (TODAY)                                 -->
         <!-- ========================================================== -->
         <div id="view-hub" class="flex flex-col space-y-3.5">
-          <!-- Header -->
           <div class="flex items-start justify-between mt-1">
             <div>
               <h1 class="text-3xl font-normal tracking-tight" style="color:var(--hdr);">Today</h1>
@@ -182,16 +190,15 @@
             </div>
             
             <div class="flex items-center gap-2">
-              <button onclick="goTo('settings')" class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 border border-white/30 text-white spring-btn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+              <button onclick="goTo('settings')" class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 border border-white/30 text-white spring-btn" title="Settings">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
               </button>
               
-              <!-- Circular Goal Progress Ring -->
               <div class="flex flex-col items-center">
                 <div class="relative w-10 h-10 flex items-center justify-center">
                   <svg class="w-full h-full -rotate-90" viewBox="0 0 44 44">
                     <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
-                    <circle id="hub-ring-circle" cx="22" cy="22" r="18" fill="none" stroke="var(--hdr)" stroke-width="3" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="47"/>
+                    <circle cx="22" cy="22" r="18" fill="none" stroke="var(--hdr)" stroke-width="3" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="47"/>
                   </svg>
                   <span class="absolute text-[10px] font-bold" style="color:var(--hdr);">58%</span>
                 </div>
@@ -202,7 +209,7 @@
 
           <!-- Module Rail -->
           <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
-            <button onclick="selectModule('SC2008', this)" class="mod-chip px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--btn)] text-[var(--on-btn)] flex items-center gap-1.5 shadow-xs whitespace-nowrap">
+            <button onclick="selectModule('SC2008', this)" class="mod-chip px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--btn)] text-[var(--on-btn)] flex items-center gap-1.5 whitespace-nowrap shadow-xs">
               <span class="w-1.5 h-1.5 rounded-full bg-current"></span> SC2008
             </button>
             <button onclick="selectModule('SC2002', this)" class="mod-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white/25 text-white flex items-center gap-1.5 whitespace-nowrap">
@@ -215,19 +222,18 @@
           </div>
 
           <!-- White Focus Card -->
-          <div class="card-glass p-5">
+          <div class="card-glass p-5 space-y-2">
             <div class="flex items-center justify-between text-[9px] font-bold tracking-wider">
               <span style="color:var(--ink3);">TODAY'S FOCUS</span>
-              <span class="px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold" style="background:color-mix(in srgb,var(--accent) 12%,transparent); color:var(--accent);">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4h9l-1 3 1 3H5"/></svg>
+              <span class="px-2 py-0.5 rounded-full font-semibold" style="background:color-mix(in srgb,var(--accent) 12%,transparent); color:var(--accent);">
                 70m / 120m
               </span>
             </div>
 
-            <h2 id="focus-title" class="text-xl font-bold tracking-tight mt-2.5" style="color:var(--ink);">Computer Networks</h2>
-            <p class="text-xs leading-relaxed mt-1" style="color:var(--ink2);">Finish the socket programming problem set, then skim chapter 4 on congestion control.</p>
+            <h2 id="focus-title" class="text-xl font-bold tracking-tight mt-1" style="color:var(--ink);">Computer Networks</h2>
+            <p class="text-xs leading-relaxed mt-0.5" style="color:var(--ink2);">Finish the socket programming problem set, then review congestion control.</p>
 
-            <div class="flex items-center justify-between mt-3.5 pt-2 border-t" style="border-color:var(--hair2);">
+            <div class="flex items-center justify-between mt-3 pt-2 border-t" style="border-color:var(--hair2);">
               <div class="flex items-center gap-1">
                 <button onclick="setDuration(25, this)" class="dur-btn px-2.5 py-1 rounded-full text-[11px] font-medium bg-black/5 dark:bg-white/5">25m</button>
                 <button onclick="setDuration(50, this)" class="dur-btn px-2.5 py-1 rounded-full text-[11px] font-bold bg-[var(--btn)] text-[var(--on-btn)]">50m</button>
@@ -237,62 +243,33 @@
             </div>
 
             <!-- Start Session CTA -->
-            <button onclick="startSession()" class="w-full mt-4 h-11 rounded-full font-bold text-xs flex items-center justify-center gap-2 shadow-md spring-btn transition"
+            <button onclick="startSession()" class="w-full mt-3 h-11 rounded-full font-bold text-xs flex items-center justify-center gap-2 shadow-md spring-btn"
                     style="background:var(--btn); color:var(--on-btn);">
               Start Session
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </button>
           </div>
 
-          <!-- Lock Mode Selector (Manual, Barcode, NFC Card - NO ACCELEROMETER) -->
+          <!-- Lock Mode Selector (No Posture Limits) -->
           <div class="flex items-center gap-1.5 px-1 pt-1">
             <span class="text-[9px] font-bold tracking-widest" style="color:var(--ink3);">LOCK:</span>
-            <button onclick="setLockMode('manual', this)" class="lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[var(--btn)] text-[var(--on-btn)] flex items-center gap-1">
-              <span>▶</span> Manual
-            </button>
-            <button onclick="setLockMode('barcode', this)" class="lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-black/5 dark:bg-white/5 flex items-center gap-1" style="color:var(--ink2);">
-              <span>📷</span> Barcode
-            </button>
-            <button onclick="setLockMode('card', this)" class="lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-black/5 dark:bg-white/5 flex items-center gap-1" style="color:var(--ink2);">
-              <span>💳</span> NFC Card
-            </button>
+            <button onclick="setLockMode('manual', this)" class="lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[var(--btn)] text-[var(--on-btn)]">▶ Manual</button>
+            <button onclick="goTo('scanner-qr')" class="lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-black/5 dark:bg-white/5 hover:bg-emerald-500/20" style="color:var(--ink2);">📷 Barcode</button>
+            <button onclick="goTo('scanner-nfc')" class="lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-black/5 dark:bg-white/5 hover:bg-cyan-500/20" style="color:var(--ink2);">💳 NFC Card</button>
           </div>
 
-          <!-- 7-Day Timeline Strip -->
-          <div class="mt-2 pt-1">
-            <div class="flex items-center justify-between text-[9px] font-semibold" style="color:var(--ink3);">
-              <span class="tracking-widest">TIMELINE</span>
-              <span>Aug 5 &ndash; 11</span>
+          <!-- Quick Scanner Callout -->
+          <div class="card-glass p-3 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-base">⚡</span>
+              <div>
+                <div class="font-bold text-xs" style="color:var(--ink);">Hardware Scanner Test</div>
+                <div class="text-[10px]" style="color:var(--ink3);">Direct access to optical &amp; NFC readers</div>
+              </div>
             </div>
-            <div class="flex gap-1.5 mt-2">
-              <div class="flex-1 py-1.5 rounded-xl flex flex-col items-center gap-1 bg-black/5 dark:bg-white/5">
-                <span class="text-[9px] font-medium" style="color:var(--ink3);">T</span>
-                <span class="w-1.5 h-1.5 rounded-full" style="background:var(--accent);"></span>
-              </div>
-              <div class="flex-1 py-1.5 rounded-xl flex flex-col items-center gap-1 bg-black/5 dark:bg-white/5">
-                <span class="text-[9px] font-medium" style="color:var(--ink3);">W</span>
-                <span class="w-1.5 h-1.5 rounded-full" style="background:var(--accent);"></span>
-              </div>
-              <div class="flex-1 py-1.5 rounded-xl flex flex-col items-center gap-1 bg-black/5 dark:bg-white/5">
-                <span class="text-[9px] font-medium" style="color:var(--ink3);">T</span>
-                <span class="w-1.5 h-1.5 rounded-full" style="background:var(--accent);"></span>
-              </div>
-              <div class="flex-1 py-1.5 rounded-xl flex flex-col items-center gap-1 bg-[var(--btn)] text-[var(--on-btn)] shadow-xs">
-                <span class="text-[9px] font-bold">F</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-              </div>
-              <div class="flex-1 py-1.5 rounded-xl flex flex-col items-center gap-1 bg-black/5 dark:bg-white/5">
-                <span class="text-[9px] font-medium" style="color:var(--ink3);">S</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-black/15 dark:bg-white/15"></span>
-              </div>
-              <div class="flex-1 py-1.5 rounded-xl flex flex-col items-center gap-1 bg-black/5 dark:bg-white/5">
-                <span class="text-[9px] font-medium" style="color:var(--ink3);">S</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-black/15 dark:bg-white/15"></span>
-              </div>
-              <div class="flex-1 py-1.5 rounded-xl flex flex-col items-center gap-1 bg-black/5 dark:bg-white/5">
-                <span class="text-[9px] font-medium" style="color:var(--ink3);">M</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-black/15 dark:bg-white/15"></span>
-              </div>
+            <div class="flex gap-1.5">
+              <button onclick="goTo('scanner-qr')" class="px-2.5 py-1 rounded-xl font-bold text-xs bg-emerald-500 text-white spring-btn">📷 QR</button>
+              <button onclick="goTo('scanner-nfc')" class="px-2.5 py-1 rounded-xl font-bold text-xs bg-cyan-600 text-white spring-btn">💳 NFC</button>
             </div>
           </div>
         </div>
@@ -301,19 +278,16 @@
         <!-- SCREEN 2: ACTIVE LOCKED DIAL                               -->
         <!-- ========================================================== -->
         <div id="view-active" class="hidden flex flex-col items-center justify-between min-h-full py-2">
-          <!-- Status pill -->
           <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2E9E77]/15 border border-[#2E9E77]/30 text-[#2E9E77] text-[10px] font-bold tracking-widest">
             <span class="w-1.5 h-1.5 rounded-full bg-[#2E9E77] animate-ping"></span>
             LOCKED IN
           </div>
 
-          <!-- Minimalist Circular Dial (Border removed, clean Apple style) -->
-          <div class="relative w-56 h-56 flex items-center justify-center my-4">
+          <!-- Minimalist Dial -->
+          <div class="relative w-56 h-56 flex items-center justify-center my-3">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 250 250">
-              <!-- Outer track -->
               <circle cx="125" cy="125" r="114" fill="none" stroke="currentColor" stroke-width="1.5" class="opacity-15"/>
-              <circle id="active-ring-outer" cx="125" cy="125" r="114" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="716" stroke-dashoffset="180" class="opacity-50"/>
-              <!-- Inner progress ring -->
+              <circle cx="125" cy="125" r="114" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="716" stroke-dashoffset="180" class="opacity-50"/>
               <circle cx="125" cy="125" r="102" fill="none" stroke="currentColor" stroke-width="3" class="opacity-10"/>
               <circle id="active-ring-inner" cx="125" cy="125" r="102" fill="none" stroke="var(--accent)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="640" stroke-dashoffset="160"/>
             </svg>
@@ -323,36 +297,33 @@
             </div>
           </div>
 
-          <!-- Active Goal Card -->
-          <div class="w-full card-glass p-3.5 mb-4">
+          <div class="w-full card-glass p-3.5 mb-3">
             <div class="flex items-center justify-between text-[9px] font-bold">
               <span style="color:var(--ink3);">THIS WEEK'S GOAL</span>
               <span style="color:var(--accent);">71m / 120m</span>
             </div>
             <p class="text-xs font-semibold mt-1" style="color:var(--ink);">Finish the socket programming problem set</p>
-            <div class="w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 mt-2 overflow-hidden">
-              <div class="w-[59%] h-full rounded-full" style="background:var(--accent);"></div>
-            </div>
-            <div class="text-[9.5px] mt-1.5" style="color:var(--ink3);">49m left to hit this week's target.</div>
           </div>
 
-          <!-- Active Actions: Pause, Stop (Working!), Unlock Early -->
+          <!-- Actions -->
           <div class="w-full flex flex-col gap-2">
             <div class="flex gap-2">
-              <button onclick="togglePause()" id="pause-btn" class="flex-1 h-10 rounded-full font-semibold text-xs bg-black/5 dark:bg-white/10 hover:bg-black/10 flex items-center justify-center gap-1.5 spring-btn">
+              <button onclick="togglePause()" id="pause-btn" class="flex-1 h-10 rounded-full font-semibold text-xs bg-black/5 dark:bg-white/10 flex items-center justify-center gap-1.5 spring-btn">
                 <span id="pause-icon">⏸</span> <span id="pause-text">Pause</span>
               </button>
               <button onclick="confirmStop()" class="flex-1 h-10 rounded-full font-semibold text-xs bg-rose-500/15 text-rose-500 hover:bg-rose-500/25 flex items-center justify-center gap-1.5 spring-btn">
                 <span>⏹</span> Stop
               </button>
             </div>
-            <button onclick="goTo('scanner')" class="w-full h-11 rounded-2xl card-glass flex items-center justify-between px-4 text-xs font-semibold spring-btn" style="color:var(--ink);">
-              <span class="flex items-center gap-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
-                Scan Barcode or NFC Card to Unlock
-              </span>
-              <span>&rarr;</span>
-            </button>
+            
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="goTo('scanner-qr')" class="h-10 rounded-2xl card-glass flex items-center justify-center gap-1 text-xs font-bold spring-btn" style="color:var(--ink);">
+                <span>📷</span> Scan Barcode
+              </button>
+              <button onclick="goTo('scanner-nfc')" class="h-10 rounded-2xl card-glass flex items-center justify-center gap-1 text-xs font-bold spring-btn" style="color:var(--ink);">
+                <span>💳</span> Tap NFC Card
+              </button>
+            </div>
           </div>
         </div>
 
@@ -363,83 +334,147 @@
           <div class="flex items-center justify-between mt-1">
             <div>
               <h1 class="text-2xl font-bold tracking-tight" style="color:var(--hdr);">Trigger Vault</h1>
-              <p class="text-xs opacity-75 mt-0.5" style="color:var(--hdr);">Registered Physical Keys</p>
+              <p class="text-xs opacity-75 mt-0.5" style="color:var(--hdr);">Tap a card to test hardware engine</p>
             </div>
-            <button onclick="goTo('scanner')" class="w-9 h-9 rounded-xl flex items-center justify-center bg-white/20 border border-white/30 text-white spring-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-            </button>
+            <button onclick="openRegisterChoiceModal()" class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 text-white font-bold text-base spring-btn">+</button>
           </div>
 
-          <div class="flex items-center justify-between text-[9.5px] font-bold tracking-wider px-1 pt-1" style="color:var(--ink3);">
-            <span>SAVED KEYS</span>
-            <span class="px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10">3 REGISTERED</span>
-          </div>
-
-          <!-- Key 1: Optical Barcode -->
-          <div class="card-glass p-3 flex items-center justify-between">
+          <!-- Key 1: Optical Barcode Key (Clickable -> Opens Barcode Scanner) -->
+          <div onclick="goTo('scanner-qr')" class="card-glass p-3.5 flex items-center justify-between cursor-pointer hover:ring-2 hover:ring-blue-500 transition">
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base" style="background:color-mix(in srgb,var(--accent) 15%,transparent); color:var(--accent);">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style="background:color-mix(in srgb,var(--accent) 15%,transparent); color:var(--accent);">
                 📷
               </div>
               <div>
                 <div class="text-xs font-bold" style="color:var(--ink);">Desk Water Bottle</div>
                 <div class="text-[10px] flex items-center gap-1 mt-0.5" style="color:var(--ink3);">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#2E9E77]"></span> Barcode &middot; Ready
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#2E9E77]"></span> Barcode &middot; Tap to open scanner
                 </div>
               </div>
             </div>
-            <div class="w-8 h-5 rounded-full bg-[#2E9E77] p-0.5 flex justify-end items-center cursor-pointer">
-              <div class="w-4 h-4 rounded-full bg-white"></div>
-            </div>
+            <span class="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2.5 py-1 rounded-full">SCAN →</span>
           </div>
 
-          <!-- Key 2: NFC Card -->
-          <div class="card-glass p-3 flex items-center justify-between">
+          <!-- Key 2: Contactless NFC Key (Clickable -> Opens NFC Reader) -->
+          <div onclick="goTo('scanner-nfc')" class="card-glass p-3.5 flex items-center justify-between cursor-pointer hover:ring-2 hover:ring-cyan-500 transition">
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base bg-[#2E9E77]/15 text-[#2E9E77]">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-[#2E9E77]/15 text-[#2E9E77]">
                 💳
               </div>
               <div>
-                <div class="text-xs font-bold" style="color:var(--ink);">Student ID Card</div>
+                <div class="text-xs font-bold" style="color:var(--ink);">Student Matric Card</div>
                 <div class="text-[10px] flex items-center gap-1 mt-0.5" style="color:var(--ink3);">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#2E9E77]"></span> NFC &middot; 04:52:8A:1C
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#2E9E77]"></span> NFC Tag &middot; Tap to read UID
                 </div>
               </div>
             </div>
-            <div class="w-8 h-5 rounded-full bg-[#2E9E77] p-0.5 flex justify-end items-center cursor-pointer">
-              <div class="w-4 h-4 rounded-full bg-white"></div>
-            </div>
+            <span class="text-[10px] font-bold text-cyan-600 bg-cyan-500/10 px-2.5 py-1 rounded-full">TAP →</span>
           </div>
 
           <!-- Key 3: Wi-Fi Zone -->
-          <div class="card-glass p-3 flex items-center justify-between">
+          <div class="card-glass p-3.5 flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base bg-violet-500/15 text-violet-500">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-violet-500/15 text-violet-500">
                 📍
               </div>
               <div>
                 <div class="text-xs font-bold" style="color:var(--ink);">Library L3 Wi-Fi</div>
-                <div class="text-[10px] flex items-center gap-1 mt-0.5" style="color:var(--ink3);">
-                  <span class="w-1.5 h-1.5 rounded-full bg-black/30 dark:bg-white/30"></span> Study Zone &middot; Idle
-                </div>
+                <div class="text-[10px]" style="color:var(--ink3);">Study Zone &middot; Idle</div>
               </div>
             </div>
-            <div class="w-8 h-5 rounded-full bg-black/20 dark:bg-white/20 p-0.5 flex justify-start items-center cursor-pointer">
-              <div class="w-4 h-4 rounded-full bg-white"></div>
-            </div>
+            <span class="text-[10px] font-bold opacity-60 px-2.5 py-1 rounded-full bg-black/10 dark:bg-white/10">ZONE</span>
           </div>
 
-          <button onclick="goTo('scanner')" class="w-full py-3 rounded-full border border-dashed text-xs font-semibold text-center transition" style="border-color:var(--ink3); color:var(--ink2);">
-            + Register New Key
+          <button onclick="openRegisterChoiceModal()" class="w-full py-3 rounded-full border border-dashed text-xs font-semibold text-center transition spring-btn" style="border-color:var(--ink3); color:var(--ink2);">
+            + Register New Key (Camera or NFC)
           </button>
-
-          <p class="text-[10px] leading-relaxed px-2 text-center" style="color:var(--ink3);">
-            Physical keys arm the timer and release early unlocks. No accelerometer or posture restrictions are enforced.
-          </p>
         </div>
 
         <!-- ========================================================== -->
-        <!-- SCREEN 4: WEEKLY NOTES & JOURNAL                            -->
+        <!-- SCREEN 4: OPTICAL BARCODE / QR SCANNER (DIRECT ACCESS)     -->
+        <!-- ========================================================== -->
+        <div id="view-scanner-qr" class="hidden flex flex-col h-full rounded-2xl bg-black text-white p-4 justify-between">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-base font-bold flex items-center gap-1.5 text-emerald-400">
+                <span>📷</span> Optical Barcode Scanner
+              </div>
+              <div class="text-[10.5px] text-white/60">CameraX + ML Kit Barcode Model</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="goTo('scanner-nfc')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/20 hover:bg-white/30 text-white transition">
+                Switch to NFC 💳
+              </button>
+              <button onclick="goTo('vault')" class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">&times;</button>
+            </div>
+          </div>
+
+          <!-- Camera Viewfinder -->
+          <div class="relative w-52 h-52 mx-auto my-auto border-2 border-white/25 rounded-2xl flex items-center justify-center overflow-hidden bg-white/5">
+            <div class="laser-line"></div>
+            <!-- Corners -->
+            <div class="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2" style="border-color:var(--accent);"></div>
+            <div class="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2" style="border-color:var(--accent);"></div>
+            <div class="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2" style="border-color:var(--accent);"></div>
+            <div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2" style="border-color:var(--accent);"></div>
+            
+            <div class="text-[10.5px] text-white/70 text-center px-4 z-10">
+              Point camera at barcode (Water Bottle, Textbook, Snack)
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <button onclick="simulateSuccess('Barcode Key: Desk Water Bottle (Code128)')" class="w-full py-2.5 rounded-full font-bold text-xs bg-white text-black shadow-lg spring-btn">
+              Simulate Barcode Scan Success ✓
+            </button>
+            <div class="flex items-center justify-around text-xs text-white/70">
+              <span class="cursor-pointer hover:text-white">🔦 Torch: Off</span>
+              <span>&bull;</span>
+              <span class="cursor-pointer hover:text-white" onclick="goTo('vault')">Back to Vault</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- SCREEN 5: CONTACTLESS NFC TAG READER (DIRECT ACCESS)        -->
+        <!-- ========================================================== -->
+        <div id="view-scanner-nfc" class="hidden flex flex-col h-full rounded-2xl bg-[#060E14] text-white p-4 justify-between">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-base font-bold flex items-center gap-1.5 text-cyan-400">
+                <span>💳</span> Contactless NFC Reader
+              </div>
+              <div class="text-[10.5px] text-white/60">Android enableReaderMode() Raw UID</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="goTo('scanner-qr')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/20 hover:bg-white/30 text-white transition">
+                Switch to QR 📷
+              </button>
+              <button onclick="goTo('vault')" class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">&times;</button>
+            </div>
+          </div>
+
+          <!-- Radar Sonar Area -->
+          <div class="relative w-48 h-48 mx-auto my-auto flex items-center justify-center">
+            <div class="sonar-ring"></div>
+            <div class="sonar-ring"></div>
+            <div class="sonar-ring"></div>
+            <div class="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-2xl z-10 shadow-lg">
+              📡
+            </div>
+          </div>
+
+          <div class="flex flex-col items-center gap-1.5 text-center">
+            <h4 class="text-sm font-bold text-white">Hold card against back of S24 Ultra</h4>
+            <p class="text-[10.5px] text-white/60 px-4">Reads student card UID: 04:52:8A:1C. No balances or personal data accessed.</p>
+            <button onclick="simulateSuccess('NFC Card: Student ID (UID: 04:52:8A:1C)')" class="w-full mt-2 py-2.5 rounded-full font-bold text-xs bg-cyan-400 text-black shadow-lg spring-btn">
+              Simulate NFC Card Tap ✓
+            </button>
+          </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- SCREEN 6: WEEKLY NOTES                                     -->
         <!-- ========================================================== -->
         <div id="view-notes" class="hidden flex flex-col space-y-3">
           <div class="flex items-center justify-between mt-1">
@@ -447,174 +482,44 @@
               <h1 class="text-2xl font-bold tracking-tight" style="color:var(--hdr);">This Week</h1>
               <p class="text-xs opacity-75 mt-0.5" style="color:var(--hdr);">Oct 19 &ndash; 25 &middot; <span id="notes-done-count">2</span>/5 done</p>
             </div>
-            <div class="flex gap-1.5">
-              <button class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white">&lsaquo;</button>
-              <button class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white">&rsaquo;</button>
-            </div>
           </div>
 
           <div class="card-glass p-4 space-y-2.5">
             <div class="flex items-center justify-between text-[10px] font-bold">
               <span style="color:var(--ink3);">WEEKLY GOALS</span>
-              <span class="px-2 py-0.5 rounded-full font-bold" style="background:color-mix(in srgb,var(--accent) 12%,transparent); color:var(--accent);" id="notes-badge">2 / 5</span>
+              <span class="px-2 py-0.5 rounded-full font-bold" style="background:color-mix(in srgb,var(--accent) 12%,transparent); color:var(--accent);">2 / 5</span>
             </div>
 
-            <!-- Goal 1 -->
-            <div class="flex items-center gap-2.5 py-1 cursor-pointer" onclick="toggleGoal(this)">
+            <div class="flex items-center gap-2.5 py-0.5 cursor-pointer" onclick="toggleGoal(this)">
               <div class="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs text-white" style="background:var(--accent);">✓</div>
               <span class="text-xs line-through flex-1" style="color:var(--ink3);">Finish SC2008 assignment 2</span>
             </div>
-
-            <!-- Goal 2 -->
-            <div class="flex items-center gap-2.5 py-1 cursor-pointer" onclick="toggleGoal(this)">
+            <div class="flex items-center gap-2.5 py-0.5 cursor-pointer" onclick="toggleGoal(this)">
               <div class="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs text-white" style="background:var(--accent);">✓</div>
               <span class="text-xs line-through flex-1" style="color:var(--ink3);">Read chapter 6 before Thursday</span>
             </div>
-
-            <!-- Goal 3 -->
-            <div class="flex items-center gap-2.5 py-1 cursor-pointer" onclick="toggleGoal(this)">
+            <div class="flex items-center gap-2.5 py-0.5 cursor-pointer" onclick="toggleGoal(this)">
               <div class="w-5 h-5 rounded-md border border-black/25 dark:border-white/25 flex items-center justify-center text-xs"></div>
               <span class="text-xs flex-1" style="color:var(--ink);">Three SC2008 sessions before Friday</span>
             </div>
-
-            <!-- Goal 4 -->
-            <div class="flex items-center gap-2.5 py-1 cursor-pointer" onclick="toggleGoal(this)">
-              <div class="w-5 h-5 rounded-md border border-black/25 dark:border-white/25 flex items-center justify-center text-xs"></div>
-              <span class="text-xs flex-1" style="color:var(--ink);">Reply to project supervisor</span>
-            </div>
-
-            <div class="px-3 py-1.5 rounded-full text-[10px] font-semibold flex items-center gap-1.5" style="background:color-mix(in srgb,var(--amber) 12%,transparent); color:var(--amber);">
-              <span>⚡</span> Bring 2 open goals from last week
-            </div>
-          </div>
-
-          <!-- Notes Card -->
-          <div class="card-glass p-3.5 space-y-2">
-            <div class="text-[10px] font-bold tracking-wider" style="color:var(--ink3);">NOTES</div>
-            <p class="text-xs leading-relaxed" style="color:var(--ink);">Assignment 2 needs the circuit diagram redone &mdash; topology numbering was wrong. Start with packet tracer file.</p>
-            <div class="text-[9px] font-bold" style="color:var(--ink3);">TODAY &middot; 2:14 PM</div>
           </div>
         </div>
 
         <!-- ========================================================== -->
-        <!-- SCREEN 5: STUDY ANALYTICS                                   -->
+        <!-- SCREEN 7: STUDY ANALYTICS                                   -->
         <!-- ========================================================== -->
         <div id="view-analytics" class="hidden flex flex-col space-y-3">
-          <div class="mt-1">
-            <h1 class="text-2xl font-bold tracking-tight" style="color:var(--hdr);">Study Analytics</h1>
-            <p class="text-xs opacity-75 mt-0.5" style="color:var(--hdr);">Performance & Habits</p>
-          </div>
-
-          <!-- Metrics Row -->
+          <h1 class="text-2xl font-bold tracking-tight mt-1" style="color:var(--hdr);">Study Analytics</h1>
+          
           <div class="grid grid-cols-3 gap-2">
-            <div class="card-glass p-2.5">
-              <div class="text-lg font-bold" style="color:var(--ink);">24.5h</div>
-              <div class="text-[9px]" style="color:var(--ink3);">Total Focus</div>
-              <div class="text-[8.5px] font-semibold mt-1" style="color:var(--accent);">↑ +18%</div>
-            </div>
-            <div class="card-glass p-2.5">
-              <div class="text-lg font-bold text-[#2E9E77]">92%</div>
-              <div class="text-[9px]" style="color:var(--ink3);">Lock-In Rate</div>
-              <div class="text-[8.5px] font-semibold mt-1 text-[#2E9E77]">● On track</div>
-            </div>
-            <div class="card-glass p-2.5">
-              <div class="text-lg font-bold" style="color:var(--ink);">18</div>
-              <div class="text-[9px]" style="color:var(--ink3);">Sessions</div>
-              <div class="text-[8.5px] font-semibold mt-1" style="color:var(--ink3);">this week</div>
-            </div>
-          </div>
-
-          <!-- Weekly Bar Chart -->
-          <div class="card-glass p-3.5">
-            <div class="flex items-center justify-between text-[9px] font-bold">
-              <span style="color:var(--ink3);">LAST 7 DAYS</span>
-              <span style="color:var(--ink3);">hours</span>
-            </div>
-            <div class="flex items-end gap-2 h-20 pt-2">
-              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <div class="w-full rounded-t-md opacity-40" style="height:38%; background:var(--accent);"></div>
-                <span class="text-[8.5px]" style="color:var(--ink3);">M</span>
-              </div>
-              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <div class="w-full rounded-t-md opacity-60" style="height:62%; background:var(--accent);"></div>
-                <span class="text-[8.5px]" style="color:var(--ink3);">T</span>
-              </div>
-              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <div class="w-full rounded-t-md font-bold" style="height:88%; background:var(--accent);"></div>
-                <span class="text-[8.5px] font-bold" style="color:var(--ink);">W</span>
-              </div>
-              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <div class="w-full rounded-t-md opacity-45" style="height:46%; background:var(--accent);"></div>
-                <span class="text-[8.5px]" style="color:var(--ink3);">T</span>
-              </div>
-              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <div class="w-full rounded-t-md opacity-70" style="height:70%; background:var(--accent);"></div>
-                <span class="text-[8.5px]" style="color:var(--ink3);">F</span>
-              </div>
-              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <div class="w-full rounded-t-md opacity-30" style="height:28%; background:var(--accent);"></div>
-                <span class="text-[8.5px]" style="color:var(--ink3);">S</span>
-              </div>
-              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <div class="w-full rounded-t-md opacity-20" style="height:16%; background:var(--accent);"></div>
-                <span class="text-[8.5px]" style="color:var(--ink3);">S</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Course Breakdown -->
-          <div class="card-glass p-3 space-y-2">
-            <div class="flex items-center justify-between text-xs font-semibold">
-              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:var(--accent);"></span> SC2008 Networks</span>
-              <span class="font-bold">9.5h</span>
-            </div>
-            <div class="flex items-center justify-between text-xs font-semibold">
-              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#2E9E77]"></span> SC2002 OOP</span>
-              <span class="font-bold">7.2h</span>
-            </div>
-            <div class="flex items-center justify-between text-xs font-semibold">
-              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span> SC2006 Software Eng</span>
-              <span class="font-bold">5.1h</span>
-            </div>
+            <div class="card-glass p-2.5"><div class="text-lg font-bold" style="color:var(--ink);">24.5h</div><div class="text-[9px]" style="color:var(--ink3);">Total Focus</div></div>
+            <div class="card-glass p-2.5"><div class="text-lg font-bold text-emerald-600">92%</div><div class="text-[9px]" style="color:var(--ink3);">Lock-In</div></div>
+            <div class="card-glass p-2.5"><div class="text-lg font-bold" style="color:var(--accent);">5d</div><div class="text-[9px]" style="color:var(--ink3);">Streak</div></div>
           </div>
         </div>
 
         <!-- ========================================================== -->
-        <!-- SCREEN 6: OPTICAL BARCODE / NFC SCANNER                    -->
-        <!-- ========================================================== -->
-        <div id="view-scanner" class="hidden flex flex-col h-full rounded-3xl overflow-hidden bg-black text-white p-3 justify-between">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-lg font-bold">Scan Physical Key</div>
-              <div class="text-[11px] text-white/60">Optical Barcode or NFC Tag</div>
-            </div>
-            <button onclick="goTo('hub')" class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">&times;</button>
-          </div>
-
-          <!-- Viewfinder Frame with Laser Sweep -->
-          <div class="relative w-52 h-52 mx-auto my-auto border-2 border-white/20 rounded-2xl flex items-center justify-center overflow-hidden">
-            <div class="absolute inset-0 bg-blue-500/5"></div>
-            <!-- Laser -->
-            <div class="scanner-laser absolute left-2 right-2 h-0.5 rounded-full" style="background:linear-gradient(90deg,transparent,var(--accent),#FFFFFF,var(--accent),transparent);"></div>
-            <!-- Corners -->
-            <div class="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2" style="border-color:var(--accent);"></div>
-            <div class="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2" style="border-color:var(--accent);"></div>
-            <div class="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2" style="border-color:var(--accent);"></div>
-            <div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2" style="border-color:var(--accent);"></div>
-            
-            <div class="text-[10px] text-white/50 text-center px-4">Aim camera at your bottle barcode or tap student card</div>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <button onclick="simulateScanSuccess()" class="w-full py-2.5 rounded-full font-bold text-xs bg-white text-black shadow-lg">
-              Simulate Key Unlock Verified ✓
-            </button>
-            <button onclick="goTo('hub')" class="text-xs text-white/60 text-center py-1">Cancel</button>
-          </div>
-        </div>
-
-        <!-- ========================================================== -->
-        <!-- SCREEN 7: SETTINGS                                         -->
+        <!-- SCREEN 8: SETTINGS                                         -->
         <!-- ========================================================== -->
         <div id="view-settings" class="hidden flex flex-col space-y-3">
           <div class="flex items-center justify-between mt-1">
@@ -630,84 +535,51 @@
                 Toggle Light/Dark
               </button>
             </div>
-            <div class="flex items-center justify-between text-xs pt-2 border-t" style="border-color:var(--hair2);">
-              <span style="color:var(--ink);">Accent Palette</span>
-              <div class="flex gap-1.5">
-                <button onclick="setAccent('blue')" class="w-5 h-5 rounded-full bg-[#3E6DF3]"></button>
-                <button onclick="setAccent('green')" class="w-5 h-5 rounded-full bg-[#2E9E77]"></button>
-                <button onclick="setAccent('red')" class="w-5 h-5 rounded-full bg-[#DC4B52]"></button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card-glass p-4 space-y-3">
-            <div class="text-[10px] font-bold tracking-wider" style="color:var(--ink3);">FOCUS RULES</div>
-            <div class="flex items-center justify-between text-xs">
-              <div>
-                <div class="font-semibold" style="color:var(--ink);">Distraction Guard</div>
-                <div class="text-[10px]" style="color:var(--ink3);">Polls blacklisted apps (10s grace)</div>
-              </div>
-              <div class="w-8 h-5 rounded-full bg-[#2E9E77] p-0.5 flex justify-end items-center">
-                <div class="w-4 h-4 rounded-full bg-white"></div>
-              </div>
-            </div>
-            <div class="flex items-center justify-between text-xs pt-2 border-t" style="border-color:var(--hair2);">
-              <div>
-                <div class="font-semibold" style="color:var(--ink);">App-Close Heads-Up</div>
-                <div class="text-[10px]" style="color:var(--ink3);">Notifies immediately when closed</div>
-              </div>
-              <div class="w-8 h-5 rounded-full bg-[#2E9E77] p-0.5 flex justify-end items-center">
-                <div class="w-4 h-4 rounded-full bg-white"></div>
-              </div>
-            </div>
           </div>
         </div>
 
       </div>
 
-      <!-- BOTTOM NAVIGATION BAR (FLOATING APPLE PILL) -->
+      <!-- S24 Ultra Floating Bottom Navigation Bar -->
       <div id="bottom-nav" class="absolute bottom-4 left-4 right-4 h-14 rounded-2xl card-glass flex items-center justify-around px-2 shadow-lg z-30 transition-all duration-300">
         <button onclick="goTo('hub')" id="nav-hub" class="flex flex-col items-center gap-0.5 text-[9px] font-semibold text-[var(--accent)] spring-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          Focus
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Focus
         </button>
         <button onclick="goTo('vault')" id="nav-vault" class="flex flex-col items-center gap-0.5 text-[9px] font-medium opacity-60 hover:opacity-100 spring-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
-          Keys
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Keys
         </button>
         <button onclick="goTo('notes')" id="nav-notes" class="flex flex-col items-center gap-0.5 text-[9px] font-medium opacity-60 hover:opacity-100 spring-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/></svg>
-          Notes
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Notes
         </button>
         <button onclick="goTo('analytics')" id="nav-analytics" class="flex flex-col items-center gap-0.5 text-[9px] font-medium opacity-60 hover:opacity-100 spring-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>
-          Stats
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Stats
         </button>
       </div>
 
-      <!-- Stop Confirmation Modal -->
-      <div id="stop-modal" class="hidden absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-        <div class="card-glass p-5 w-full max-w-xs space-y-3 text-center shadow-2xl">
-          <div class="w-10 h-10 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center text-lg mx-auto">
-            ⏹
-          </div>
-          <h3 class="text-base font-bold" style="color:var(--ink);">Stop Session?</h3>
-          <p class="text-xs leading-relaxed" style="color:var(--ink2);">Ending early will cancel your study streak progress for this session.</p>
-          <div class="flex gap-2 pt-2">
-            <button onclick="closeStopModal()" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/10" style="color:var(--ink);">Cancel</button>
-            <button onclick="doStopSession()" class="flex-1 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white">Stop Now</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Home Indicator Bar -->
-      <div class="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 rounded-full bg-black/30 dark:bg-white/30 z-40"></div>
+      <!-- S24 Ultra Android Bottom Gesture Bar -->
+      <div class="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 rounded-full bg-black/40 dark:bg-white/40 z-40"></div>
 
     </div>
   </div>
 
+  <!-- Registration Choice Modal -->
+  <div id="choice-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-5">
+    <div class="card-glass p-5 w-full max-w-xs space-y-3 text-center shadow-2xl">
+      <h3 class="text-sm font-bold" style="color:var(--ink);">Register New Unlock Key</h3>
+      <p class="text-xs" style="color:var(--ink2);">Select hardware key engine:</p>
+      <div class="flex flex-col gap-2 pt-1">
+        <button onclick="closeChoiceModal(); goTo('scanner-qr');" class="py-2.5 px-3 rounded-xl text-xs font-bold bg-[var(--btn)] text-[var(--on-btn)] flex items-center justify-center gap-2">
+          <span>📷</span> Optical Barcode / QR
+        </button>
+        <button onclick="closeChoiceModal(); goTo('scanner-nfc');" class="py-2.5 px-3 rounded-xl text-xs font-bold bg-cyan-600 text-white flex items-center justify-center gap-2">
+          <span>💳</span> Contactless NFC Tag
+        </button>
+        <button onclick="closeChoiceModal()" class="py-1 text-xs font-semibold" style="color:var(--ink3);">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Theme & Accent Management
     let currentMode = 'light';
     let currentAccent = 'blue';
 
@@ -727,10 +599,9 @@
       });
     }
 
-    // Screen Switching
-    const screenNames = ['hub', 'active', 'vault', 'notes', 'analytics', 'scanner', 'settings'];
+    const allScreens = ['hub', 'active', 'vault', 'scanner-qr', 'scanner-nfc', 'notes', 'analytics', 'settings'];
     function goTo(target) {
-      screenNames.forEach(name => {
+      allScreens.forEach(name => {
         const pane = document.getElementById(`view-${name}`);
         const navBtn = document.getElementById(`nav-${name}`);
         const topBtn = document.getElementById(`top-${name}`);
@@ -738,15 +609,17 @@
         if (name === target) {
           pane?.classList.remove('hidden');
           if (topBtn) {
-            topBtn.className = "px-3 py-1 rounded-xl text-xs font-semibold bg-white text-[#0B0F19] transition";
+            topBtn.classList.remove('text-white/70');
+            topBtn.classList.add('bg-white', 'text-[#0B0F19]', 'font-bold');
           }
           if (navBtn) {
             navBtn.className = "flex flex-col items-center gap-0.5 text-[9px] font-semibold text-[var(--accent)] spring-btn";
           }
         } else {
           pane?.classList.add('hidden');
-          if (topBtn) {
-            topBtn.className = "px-3 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition";
+          if (topBtn && !topBtn.id.includes('scanner')) {
+            topBtn.classList.remove('bg-white', 'text-[#0B0F19]', 'font-bold');
+            topBtn.classList.add('text-white/70');
           }
           if (navBtn) {
             navBtn.className = "flex flex-col items-center gap-0.5 text-[9px] font-medium opacity-60 hover:opacity-100 spring-btn";
@@ -754,9 +627,8 @@
         }
       });
 
-      // Bottom nav bar visibility
       const bottomNav = document.getElementById('bottom-nav');
-      if (target === 'scanner') {
+      if (target.startsWith('scanner')) {
         bottomNav.classList.add('opacity-0', 'pointer-events-none');
       } else {
         bottomNav.classList.remove('opacity-0', 'pointer-events-none');
@@ -765,7 +637,13 @@
       document.getElementById('scroll-container').scrollTop = 0;
     }
 
-    // Timer State
+    function openRegisterChoiceModal() {
+      document.getElementById('choice-modal').classList.remove('hidden');
+    }
+    function closeChoiceModal() {
+      document.getElementById('choice-modal').classList.add('hidden');
+    }
+
     let timerInterval = null;
     let secondsRemaining = 42 * 60 + 18;
     let isPaused = false;
@@ -781,16 +659,12 @@
       isPaused = false;
       document.getElementById('pause-text').textContent = 'Pause';
       document.getElementById('pause-icon').textContent = '⏸';
-      document.getElementById('active-state-sub').textContent = 'Studying: SC2008';
       
       clearInterval(timerInterval);
       timerInterval = setInterval(() => {
         if (!isPaused && secondsRemaining > 0) {
           secondsRemaining--;
           document.getElementById('active-timer-text').textContent = formatTime(secondsRemaining);
-          document.getElementById('island-text').textContent = formatTime(secondsRemaining);
-          
-          // Animate ring dash
           const offset = Math.max(0, 640 - (secondsRemaining / (50 * 60)) * 640);
           document.getElementById('active-ring-inner').setAttribute('stroke-dashoffset', offset);
         }
@@ -801,35 +675,22 @@
       isPaused = !isPaused;
       document.getElementById('pause-text').textContent = isPaused ? 'Resume' : 'Pause';
       document.getElementById('pause-icon').textContent = isPaused ? '▶' : '⏸';
-      document.getElementById('active-state-sub').textContent = isPaused ? 'Paused (Timer on hold)' : 'Studying: SC2008';
     }
 
     function confirmStop() {
-      document.getElementById('stop-modal').classList.remove('hidden');
+      if (confirm('Stop Session? Ending early will cancel your current study timer.')) {
+        clearInterval(timerInterval);
+        secondsRemaining = 50 * 60;
+        goTo('hub');
+      }
     }
 
-    function closeStopModal() {
-      document.getElementById('stop-modal').classList.add('hidden');
-    }
-
-    function doStopSession() {
+    function simulateSuccess(msg) {
+      alert(`Key Verified!\n\n${msg}\n\nSession unlocked successfully.`);
       clearInterval(timerInterval);
-      secondsRemaining = 50 * 60;
-      closeStopModal();
       goTo('hub');
-      document.getElementById('island-text').textContent = 'LockIn';
     }
 
-    function simulateScanSuccess() {
-      alert('Physical Key Verified! Early session release authorized.');
-      doStopSession();
-    }
-
-    function toggleActiveIsland() {
-      goTo('active');
-    }
-
-    // Duration & Lock options
     function setDuration(mins, btn) {
       document.querySelectorAll('.dur-btn').forEach(b => {
         b.className = "dur-btn px-2.5 py-1 rounded-full text-[11px] font-medium bg-black/5 dark:bg-white/5";
@@ -840,9 +701,9 @@
 
     function setLockMode(mode, btn) {
       document.querySelectorAll('.lock-chip').forEach(b => {
-        b.className = "lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-black/5 dark:bg-white/5 flex items-center gap-1";
+        b.className = "lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-black/5 dark:bg-white/5";
       });
-      btn.className = "lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[var(--btn)] text-[var(--on-btn)] flex items-center gap-1";
+      btn.className = "lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[var(--btn)] text-[var(--on-btn)]";
     }
 
     function selectModule(code, btn) {
@@ -853,33 +714,25 @@
       document.getElementById('focus-title').textContent = code === 'SC2008' ? 'Computer Networks' : code === 'SC2002' ? 'Object-Oriented Programming' : 'Software Engineering';
     }
 
-    // Goal Checklist Interaction
-    let doneGoals = 2;
     function toggleGoal(row) {
       const box = row.firstElementChild;
       const text = row.lastElementChild;
       const isDone = text.classList.contains('line-through');
-
       if (isDone) {
         text.classList.remove('line-through');
         text.style.color = "var(--ink)";
         box.style.background = "transparent";
         box.classList.add('border', 'border-black/25', 'dark:border-white/25');
         box.textContent = "";
-        doneGoals--;
       } else {
         text.classList.add('line-through');
         text.style.color = "var(--ink3)";
         box.style.background = "var(--accent)";
         box.classList.remove('border', 'border-black/25', 'dark:border-white/25');
         box.textContent = "✓";
-        doneGoals++;
       }
-      document.getElementById('notes-done-count').textContent = doneGoals;
-      document.getElementById('notes-badge').textContent = `${doneGoals} / 5`;
     }
 
-    // Live Clock updater
     function updateClock() {
       const now = new Date();
       const h = String(now.getHours()).padStart(2, '0');
