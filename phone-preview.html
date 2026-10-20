@@ -1,746 +1,996 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
-  <title>LockIn — Samsung Galaxy S24 Ultra (19.5:9) Phone Preview</title>
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
-  <style>
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; min-height: 100vh; }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>LockIn — S24 Ultra Full Preview</title>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;min-height:100vh;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#0A0D14;
+    color:#0B1526;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:16px 8px;
+    user-select:none;
+  }
 
-    /* Daylight / Apple Glass Tokens */
-    body[data-mode="light"] {
-      --sky: #6E9CB6; --sky2: #A9C2D3; --mid: #DCE5EF; --paper: #FBFCFE;
-      --card: #FFFFFF; --card2: #F6F8FC;
-      --ink: #0B1526; --ink2: #5C6A7E; --ink3: #7B8598;
-      --btn: #0B1526; --on-btn: #FFFFFF; --hdr: #FFFFFF;
-      --hair: rgba(11,21,38,.08); --hair2: rgba(11,21,38,.05);
-      --shadow: 0 18px 34px -18px rgba(11,21,38,.30), 0 2px 8px rgba(11,21,38,.05);
-    }
+  /* ---------------------------------------------------------------- tokens */
+  body[data-mode="light"]{
+    --sky:#6E9CB6; --sky2:#A9C2D3; --mid:#DCE5EF; --paper:#FBFCFE;
+    --card:#FFFFFF; --card2:#F6F8FC;
+    --ink:#0B1526; --ink2:#5C6A7E; --ink3:#7B8598;
+    --btn:#0B1526; --on-btn:#FFFFFF; --hdr:#FFFFFF;
+    --hair:rgba(11,21,38,.08); --hair2:rgba(11,21,38,.05);
+    --shadow:0 18px 34px -18px rgba(11,21,38,.30), 0 2px 8px rgba(11,21,38,.05);
+  }
+  body[data-mode="dark"]{
+    --sky:#06080E; --sky2:#131C2C; --mid:#0A1220; --paper:#101A2C;
+    --card:#161E2D; --card2:#0F1622;
+    --ink:#EEF3FB; --ink2:#A9B5C6; --ink3:#8B97A9;
+    --btn:#EDF2FA; --on-btn:#0B1526; --hdr:#F4F8FF;
+    --hair:rgba(255,255,255,.08); --hair2:rgba(255,255,255,.05);
+    --shadow:0 18px 34px -18px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.35);
+  }
+  /* accents — light */
+  body[data-mode="light"][data-accent="blue"]{--accent:#3E6DF3;--accent-soft:#7C9BFA;--accent-deep:#2748C4;}
+  body[data-mode="light"][data-accent="green"]{--accent:#2E9E77;--accent-soft:#68C4A2;--accent-deep:#1F7657;--sky:#6E9A8B;--sky2:#A9C4B8;}
+  body[data-mode="light"][data-accent="red"]{--accent:#DC4B52;--accent-soft:#EE868B;--accent-deep:#A82F36;--sky:#9C8187;--sky2:#C9B6B9;}
+  /* accents — dark */
+  body[data-mode="dark"][data-accent="blue"]{--accent:#6F93FF;--accent-soft:#9DB4FF;--accent-deep:#3E6DF3;}
+  body[data-mode="dark"][data-accent="green"]{--accent:#5CC49A;--accent-soft:#8FD9BB;--accent-deep:#2E9E77;}
+  body[data-mode="dark"][data-accent="red"]{--accent:#F06A70;--accent-soft:#F79BA0;--accent-deep:#C43F46;}
 
-    body[data-mode="dark"] {
-      --sky: #06080E; --sky2: #131C2C; --mid: #0A1220; --paper: #101A2C;
-      --card: #161E2D; --card2: #0F1622;
-      --ink: #EEF3FB; --ink2: #A9B5C6; --ink3: #8B97A9;
-      --btn: #EDF2FA; --on-btn: #0B1526; --hdr: #F4F8FF;
-      --hair: rgba(255,255,255,.08); --hair2: rgba(255,255,255,.05);
-      --shadow: 0 18px 34px -18px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.35);
-    }
+  :root{--coral:#DC4B52;--mint:#2E9E77;--amber:#B47C1E;--violet:#6B5CE0;}
 
-    body[data-mode="light"][data-accent="blue"] { --accent: #3E6DF3; --accent-soft: #7C9BFA; }
-    body[data-mode="light"][data-accent="green"] { --accent: #2E9E77; --sky: #6E9A8B; --sky2: #A9C4B8; }
-    body[data-mode="light"][data-accent="red"] { --accent: #DC4B52; --sky: #9C8187; --sky2: #C9B6B9; }
+  /* ------------------------------------------------------------- top controls */
+  .top-ctrl{
+    width:100%;max-width:440px;margin-bottom:14px;
+    background:#141824;border:1px solid rgba(255,255,255,.1);border-radius:18px;
+    padding:8px 12px;display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  .screen-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+  .screen-tabs button{
+    border:0;background:rgba(255,255,255,.08);font:inherit;font-size:11px;font-weight:600;
+    color:#A9B5C6;padding:5px 10px;border-radius:10px;cursor:pointer;transition:all .15s ease;
+  }
+  .screen-tabs button.on{background:#fff;color:#0B1526;}
+  .screen-tabs button.special{background:rgba(46,158,119,.15);color:#5CC49A;border:1px solid rgba(46,158,119,.3);}
+  .screen-tabs button.special-nfc{background:rgba(111,147,255,.15);color:#9DB4FF;border:1px solid rgba(111,147,255,.3);}
 
-    body[data-mode="dark"][data-accent="blue"] { --accent: #6F93FF; }
-    body[data-mode="dark"][data-accent="green"] { --accent: #5CC49A; }
-    body[data-mode="dark"][data-accent="red"] { --accent: #F06A70; }
+  .top-right{display:flex;align-items:center;gap:8px;}
+  .swatches{display:flex;gap:4px;background:rgba(0,0,0,.3);padding:3px 5px;border-radius:12px;}
+  .sw{width:16px;height:16px;border-radius:50%;border:0;cursor:pointer;}
+  .sw.blue{background:#3E6DF3;} .sw.green{background:#2E9E77;} .sw.red{background:#DC4B52;}
+  .sw.on{box-shadow:0 0 0 1.5px #fff,0 0 0 3px #0B1526;}
+  .mode-toggle{
+    border:0;background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:11px;font-weight:600;
+    padding:5px 10px;border-radius:10px;cursor:pointer;
+  }
 
-    .screen-bg {
-      background: linear-gradient(180deg,
-        var(--sky) 0%,
-        color-mix(in srgb, var(--sky) 55%, var(--sky2)) 13%,
-        var(--sky2) 22%,
-        var(--mid) 42%,
-        color-mix(in srgb, var(--mid) 60%, var(--paper)) 62%,
-        var(--paper) 100%
-      );
-    }
-    .screen-bg::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background: radial-gradient(120% 60% at 82% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 62%);
-    }
+  /* ------------------------------------------------ S24 Ultra 19.5:9 frame */
+  .phone-s24{
+    width:min(392px, 96vw);
+    height:min(845px, 92vh);
+    border-radius:20px; /* S24 Ultra sharp boxy corners */
+    background:#171920;
+    padding:9px;
+    border:3.5px solid #353945; /* Titanium flat border */
+    box-shadow:0 28px 65px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.12);
+    display:flex;flex-direction:column;position:relative;overflow:hidden;
+  }
 
-    .card-glass {
-      background: var(--card);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--hair2);
-      transition: all 0.2s ease;
-    }
+  .screen{
+    position:relative;width:100%;height:100%;border-radius:14px;overflow:hidden;
+    display:flex;flex-direction:column;
+    background:linear-gradient(180deg,var(--sky) 0%,color-mix(in srgb,var(--sky) 55%,var(--sky2)) 13%,
+      var(--sky2) 22%,var(--mid) 42%,color-mix(in srgb,var(--mid) 60%,var(--paper)) 62%,var(--paper) 100%);
+  }
+  .screen::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 60% at 82% 0%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 62%);
+  }
 
-    .spring-btn:active {
-      transform: scale(0.96);
-    }
+  /* S24 Ultra Status Bar + Punch-Hole Camera */
+  .status-bar{
+    position:relative;z-index:40;width:100%;padding:10px 18px 4px;
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:12px;font-weight:600;color:var(--hdr);
+  }
+  .camera-hole{
+    width:11px;height:11px;border-radius:50%;background:#000;
+    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2);
+  }
+  .status-right{display:flex;align-items:center;gap:6px;}
 
-    /* S24 Ultra 19.5:9 Dimensions & Sharp Boxy Corner Geometry */
-    .s24-chassis {
-      width: min(404px, 94vw);
-      height: min(854px, 92vh);
-      border-radius: 20px; /* S24 Ultra sharp boxy corners */
-      padding: 10px;
-      background: #181A1F;
-      border: 3.5px solid #363A45; /* Titanium frame */
-      box-shadow: 0 25px 60px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.12);
-    }
+  /* Scrollable container */
+  .scroll{position:relative;flex:1;overflow-y:auto;padding:10px 18px 74px;display:flex;flex-direction:column;}
+  .scroll::-webkit-scrollbar{display:none;}
+  .scroll{-ms-overflow-style:none;scrollbar-width:none;}
 
-    .s24-screen {
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
+  /* --------------------------------------------------------------- header */
+  .hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-top:2px;}
+  .hdr h1{margin:0;font-size:29px;line-height:1.06;font-weight:400;letter-spacing:-1.1px;color:var(--hdr);}
+  .hdr p{margin:3px 0 0;font-size:11.5px;color:color-mix(in srgb,var(--hdr) 75%,transparent);}
+  .hdr-right{display:flex;align-items:center;gap:8px;}
+  .gear{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--hdr) 16%,transparent);
+    color:color-mix(in srgb,var(--hdr) 88%,transparent);cursor:pointer;}
+  .ringwrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .ring{position:relative;width:40px;height:40px;}
+  .ring .pct{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;
+    font-weight:600;color:var(--hdr);}
+  .ringwrap .cap{font-size:7px;letter-spacing:1px;font-weight:600;
+    color:color-mix(in srgb,var(--hdr) 60%,transparent);}
 
-    /* Laser line sweep animation */
-    @keyframes laserSweep {
-      0%, 100% { top: 12px; }
-      50% { top: 200px; }
-    }
-    .laser-line {
-      position: absolute;
-      left: 10px; right: 10px; height: 2.5px;
-      border-radius: 2px;
-      background: linear-gradient(90deg, transparent, var(--accent), #FFFFFF, var(--accent), transparent);
-      animation: laserSweep 2.2s ease-in-out infinite;
-    }
+  /* ---------------------------------------------------------------- chips */
+  .chips{display:flex;gap:6px;margin-top:14px;overflow-x:auto;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:999px;
+    font-size:11px;font-weight:500;color:var(--hdr);
+    background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.42);
+    white-space:nowrap;cursor:pointer;}
+  body[data-mode="dark"] .chip:not(.on){background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);}
+  .chip i{width:5px;height:5px;border-radius:50%;background:currentColor;display:block;}
+  .chip.on{background:var(--btn);color:var(--on-btn);border-color:transparent;font-weight:600;}
+  .chip.dash{background:transparent;border-style:dashed;border-color:color-mix(in srgb,var(--hdr) 38%,transparent);}
 
-    /* Sonar radar pulse animation */
-    @keyframes sonarPulse {
-      0% { transform: scale(0.3); opacity: 0.8; }
-      100% { transform: scale(1.1); opacity: 0; }
-    }
-    .sonar-ring {
-      position: absolute;
-      width: 200px; height: 200px; border-radius: 50%;
-      border: 1.5px solid var(--accent);
-      animation: sonarPulse 2.4s ease-out infinite;
-    }
-    .sonar-ring:nth-child(2) { animation-delay: 0.8s; }
-    .sonar-ring:nth-child(3) { animation-delay: 1.6s; }
+  /* ----------------------------------------------------------------- card */
+  .card{background:var(--card);border-radius:24px;box-shadow:var(--shadow);
+    border:1px solid var(--hair2);padding:18px;margin-top:12px;}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .eyebrow{font-size:8.5px;letter-spacing:1.4px;font-weight:600;color:var(--ink3);}
+  .goalchip{display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;
+    background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--accent);
+    font-size:9.5px;font-weight:600;}
+  .card h2{margin:10px 0 0;font-size:20px;line-height:1.16;letter-spacing:-.5px;
+    font-weight:600;color:var(--ink);}
+  .body{margin:6px 0 0;font-size:11px;line-height:1.5;color:var(--ink2);}
+  .meta{display:flex;align-items:center;justify-content:space-between;margin-top:14px;}
+  .durs{display:flex;gap:4px;}
+  .dur{padding:4px 10px;border-radius:999px;font-size:10px;font-weight:500;color:var(--ink3);cursor:pointer;}
+  .dur.on{color:var(--ink);font-weight:600;background:color-mix(in srgb,var(--ink) 6%,transparent);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 12%,transparent);}
+  .ends{font-size:9.5px;font-weight:500;color:var(--ink3);}
+  .cta{margin-top:14px;height:44px;border-radius:999px;background:var(--btn);color:var(--on-btn);
+    display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;
+    box-shadow:0 8px 20px -10px rgba(11,21,38,.55);cursor:pointer;}
+  .cta svg{width:14px;height:14px;}
 
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
+  /* ------------------------------------------------------------ lock row */
+  .lockrow{display:flex;align-items:center;gap:6px;margin-top:14px;padding:0 2px;}
+  .mchip{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;
+    font-size:10px;font-weight:500;color:var(--ink2);cursor:pointer;
+    background:color-mix(in srgb,var(--ink) 5%,transparent);}
+  .mchip svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.9;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .mchip.on{background:var(--btn);color:var(--on-btn);font-weight:600;}
+
+  /* ------------------------------------------------------------ timeline */
+  .tl{margin-top:18px;}
+  .tl-head{display:flex;align-items:center;justify-content:space-between;}
+  .tl-head .r{font-size:9.5px;font-weight:500;color:var(--ink3);}
+  .days{display:flex;gap:5px;margin-top:8px;}
+  .day{flex:1;border-radius:12px;padding:7px 0;display:flex;flex-direction:column;
+    align-items:center;gap:5px;}
+  .day span{font-size:9px;font-weight:500;color:var(--ink3);}
+  .day i{width:5px;height:5px;border-radius:50%;background:color-mix(in srgb,var(--ink) 14%,transparent);}
+  .day.done i{width:6px;height:6px;background:var(--accent);}
+  .day.today{background:var(--btn);}
+  .day.today span{color:color-mix(in srgb,var(--on-btn) 78%,transparent);}
+  .day.today i{background:var(--on-btn);}
+
+  /* --------------------------------------------------------- locked screen */
+  .locked{flex:1;display:flex;flex-direction:column;align-items:center;
+    justify-content:space-between;padding:4px 0 2px;}
+  .locked .status{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:1.5px;
+    font-weight:600;color:color-mix(in srgb,var(--hdr) 85%,transparent);}
+  .locked .status i{width:5px;height:5px;border-radius:50%;background:var(--mint);}
+  .dial{position:relative;width:220px;height:220px;margin-top:2px;}
+  .dial .center{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;}
+  .dial .time{font-size:46px;font-weight:300;letter-spacing:-2.2px;color:var(--ink);
+    font-variant-numeric:tabular-nums;}
+  .pillrow{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
+    background:color-mix(in srgb,var(--ink) 5%,transparent);font-size:10.5px;color:var(--ink2);}
+  .pillrow i{width:4px;height:4px;border-radius:50%;background:var(--accent);}
+  .ghost{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;
+    background:color-mix(in srgb,var(--ink) 5%,transparent);font-size:10.5px;font-weight:500;
+    color:var(--ink2);cursor:pointer;}
+  .ghost svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .unlock{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+    border-radius:18px;background:var(--card);box-shadow:var(--shadow);border:1px solid var(--hair2);cursor:pointer;}
+  .unlock .l{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:500;color:var(--ink2);}
+  .unlock .l svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;}
+
+  /* ---------------------------------------------------------------- vault */
+  .page-title{font-size:25px;font-weight:400;letter-spacing:-.8px;color:var(--hdr);margin:2px 0 0;}
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-top:2px;}
+  .skybtn{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;
+    background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.42);color:var(--hdr);cursor:pointer;}
+  body[data-mode="dark"] .skybtn{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);}
+  .skybtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .sechead{display:flex;align-items:center;justify-content:space-between;margin:16px 2px 2px;}
+  .sechead .t{font-size:13px;font-weight:600;color:var(--ink);}
+  .badge{font-size:8px;letter-spacing:1.2px;font-weight:600;
+    color:color-mix(in srgb,var(--hdr) 85%,transparent);
+    background:color-mix(in srgb,var(--hdr) 16%,transparent);padding:3px 7px;border-radius:999px;}
+  .keyrow{display:flex;align-items:center;gap:11px;padding:12px;border-radius:18px;
+    background:var(--card);box-shadow:var(--shadow);border:1px solid var(--hair2);margin-top:8px;cursor:pointer;}
+  .kicon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;}
+  .kicon svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .keyrow .mid{flex:1;}
+  .keyrow .name{font-size:11.5px;font-weight:600;color:var(--ink);}
+  .keyrow .st{font-size:9px;color:var(--ink3);margin-top:2px;display:flex;align-items:center;gap:4px;}
+  .keyrow .st i{width:4px;height:4px;border-radius:50%;background:var(--mint);}
+  .switch{width:32px;height:18px;border-radius:999px;background:var(--mint);position:relative;}
+  .switch i{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:#fff;}
+  .register{margin-top:10px;padding:11px;border-radius:999px;text-align:center;font-size:11px;
+    font-weight:600;color:var(--ink2);border:1px dashed var(--hair);cursor:pointer;}
+  .note{margin-top:12px;padding:0 2px;font-size:9.5px;line-height:1.6;color:var(--ink3);}
+
+  /* --------------------------------- STUDY ANALYTICS (RESTORED IN FULL) */
+  .metrics{display:flex;gap:7px;margin-top:14px;}
+  .metric{flex:1;background:var(--card);border-radius:18px;padding:11px;
+    box-shadow:var(--shadow);border:1px solid var(--hair2);}
+  .metric .v{font-size:16px;font-weight:600;letter-spacing:-.4px;color:var(--ink);}
+  .metric .l{font-size:8.5px;color:var(--ink3);margin-top:2px;}
+  .metric .s{font-size:8px;font-weight:600;margin-top:4px;}
+  .chart{margin-top:10px;}
+  .bars{display:flex;align-items:flex-end;gap:6px;height:80px;margin-top:10px;}
+  .bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;
+    justify-content:flex-end;}
+  .bcol .b{width:100%;border-radius:5px;background:color-mix(in srgb,var(--accent) 22%,transparent);}
+  .bcol.on .b{background:linear-gradient(180deg,var(--accent),color-mix(in srgb,var(--accent) 45%,transparent));}
+  .bcol .d{font-size:8px;color:var(--ink3);font-weight:500;}
+  .bcol.on .d{color:var(--ink);font-weight:600;}
+  
+  /* 12-week heatmap grid */
+  .heat{display:grid;grid-template-columns:repeat(12,1fr);gap:3.5px;margin-top:10px;}
+  .heat i{aspect-ratio:1;border-radius:2.5px;display:block;}
+  .courserow{display:flex;align-items:center;gap:7px;font-size:9.5px;color:var(--ink2);margin-top:9px;}
+  .courserow .val{margin-left:auto;font-weight:600;color:var(--ink);}
+  .dot{width:6px;height:6px;border-radius:50%;display:block;}
+
+  /* --------------------------------------------------------------- notes */
+  .wkhdr{display:flex;align-items:center;justify-content:space-between;}
+  .wkhdr .date{font-size:12px;color:color-mix(in srgb,var(--hdr) 70%,transparent);margin-top:2px;}
+  .wkhdr .navbtns{display:flex;gap:7px;}
+  .wkbtn{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--ink) 10%,transparent);cursor:pointer;}
+  body[data-mode="dark"] .wkbtn{background:rgba(255,255,255,.10);}
+  .wkbtn svg{width:13px;height:13px;stroke:color-mix(in srgb,var(--hdr) 88%,transparent);fill:none;
+    stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  .progwrap{margin-top:8px;}
+  .prog{height:5px;border-radius:3px;background:color-mix(in srgb,var(--ink) 8%,transparent);}
+  body[data-mode="dark"] .prog{background:rgba(255,255,255,.10);}
+  .prog i{display:block;height:5px;border-radius:3px;background:var(--accent);}
+  .goalrow{display:flex;align-items:center;gap:9px;padding:6px 0;cursor:pointer;}
+  .gcheck{width:20px;height:20px;border-radius:7px;flex:none;display:grid;place-items:center;
+    border:1.5px solid color-mix(in srgb,var(--ink) 18%,transparent);}
+  body[data-mode="dark"] .gcheck{border-color:rgba(255,255,255,.18);}
+  .gcheck.on{background:var(--accent);border-color:var(--accent);}
+  .gcheck svg{width:11px;height:11px;stroke:#fff;fill:none;stroke-width:2.6;
+    stroke-linecap:round;stroke-linejoin:round;display:none;}
+  .gcheck.on svg{display:block;}
+  .goalrow .gt{font-size:11.5px;line-height:1.45;color:var(--ink);flex:1;}
+  .goalrow.done .gt{color:var(--ink3);text-decoration:line-through;}
+  .goalrow .gdel{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;flex:none;
+    background:none;border:none;}
+  .goalrow .gdel svg{width:11px;height:11px;stroke:var(--ink3);fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .addgoal{display:flex;align-items:center;gap:8px;margin-top:7px;}
+  .addgoal .field{flex:1;height:34px;border-radius:10px;background:color-mix(in srgb,var(--ink) 4%,transparent);
+    display:flex;align-items:center;padding:0 10px;font-size:11.5px;color:var(--ink3);}
+  body[data-mode="dark"] .addgoal .field{background:rgba(255,255,255,.06);}
+  .addgoal .plus{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--accent) 14%,transparent);cursor:pointer;}
+  .addgoal .plus svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:2.4;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .notecard{background:var(--card);border-radius:20px;padding:11px 13px;box-shadow:var(--shadow);
+    border:1px solid var(--hair2);margin-top:9px;}
+  .notecard .nb{font-size:11.5px;line-height:1.5;color:var(--ink);}
+  .notecard .nf{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:8px;
+    letter-spacing:1.2px;font-weight:600;color:var(--ink3);}
+  .notecard .nf i{width:9px;height:9px;border-radius:3px;background:color-mix(in srgb,var(--ink) 8%,transparent);}
+  body[data-mode="dark"] .notecard .nf i{background:rgba(255,255,255,.10);}
+  .carry{margin-top:8px;padding:7px 11px;border-radius:999px;font-size:10px;font-weight:600;
+    color:var(--amber);background:color-mix(in srgb,var(--amber) 12%,transparent);
+    border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);}
+
+  /* ------------------------------------------------------------- scanner */
+  .scanner{position:absolute;inset:0;background:#05080F;display:flex;flex-direction:column;z-index:35;}
+  .scanner .sbar{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 18px 0;}
+  .scanner .sbar h3{margin:0;font-size:21px;font-weight:600;letter-spacing:-.5px;color:#fff;}
+  .scanner .sbar p{margin:2px 0 0;font-size:10.5px;color:rgba(255,255,255,.6);}
+  .sclose{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);cursor:pointer;}
+  .sclose svg{width:14px;height:14px;stroke:#fff;stroke-width:2;stroke-linecap:round;}
+  .dead{flex:1;position:relative;overflow:hidden;}
+  .dead .feed{position:absolute;inset:0;background:
+    repeating-linear-gradient(115deg,rgba(255,255,255,.045) 0 2px,transparent 2px 11px),
+    radial-gradient(120% 70% at 78% 14%,rgba(120,160,220,.34),transparent 60%),
+    linear-gradient(160deg,#1B2434,#0A0F17 62%);}
+  .dead .shade{position:absolute;inset:0;background:linear-gradient(180deg,
+    rgba(5,8,15,.72) 0%,rgba(5,8,15,.35) 40%,rgba(5,8,15,.9) 100%);}
+  .viwe{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:210px;height:210px;}
+  .viwe .c{position:absolute;width:38px;height:38px;border:3px solid var(--accent);}
+  .viwe .c1{left:0;top:0;border-right:none;border-bottom:none;border-radius:8px 0 0 0;}
+  .viwe .c2{right:0;top:0;border-left:none;border-bottom:none;border-radius:0 8px 0 0;}
+  .viwe .c3{left:0;bottom:0;border-right:none;border-top:none;border-radius:0 0 0 8px;}
+  .viwe .c4{right:0;bottom:0;border-left:none;border-top:none;border-radius:0 0 8px 0;}
+  .viwe .laser{position:absolute;left:6px;right:6px;height:2.5px;border-radius:2px;
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 78%,transparent),#fff,
+      color-mix(in srgb,var(--accent) 78%,transparent),transparent);animation:sweep 2.4s ease-in-out infinite;}
+  @keyframes sweep{0%,100%{top:10px}50%{top:196px}}
+  .scanner .sfoot{padding:0 18px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .scanner .hint{font-size:11px;line-height:1.6;color:rgba(255,255,255,.76);text-align:center;}
+  .ghost2{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.86);
+    font-size:10.5px;font-weight:600;cursor:pointer;}
+  .ghost2 svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.9;
+    stroke-linecap:round;stroke-linejoin:round;}
+
+  /* --------------------------------------------------------------- nfc radar */
+  .radar{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
+    width:230px;height:230px;display:grid;place-items:center;}
+  .radar .ring{position:absolute;width:230px;height:230px;border-radius:50%;
+    border:1.5px solid var(--accent);opacity:.28;animation:sonar 2.4s ease-out infinite;}
+  .radar .ring:nth-child(2){animation-delay:.8s}
+  .radar .ring:nth-child(3){animation-delay:1.6s}
+  @keyframes sonar{0%{transform:scale(.34);opacity:.6}100%{transform:scale(1);opacity:0}}
+  .radar .core{width:82px;height:82px;border-radius:27px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--accent) 15%,transparent);
+    border:1px solid color-mix(in srgb,var(--accent) 42%,transparent);}
+  .radar .core svg{width:34px;height:34px;stroke:var(--accent);fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .nfcbody{position:absolute;inset:0;padding:80px 28px 0;display:flex;flex-direction:column;
+    align-items:center;text-align:center;}
+  .nfcbody h3{font-size:15px;font-weight:600;color:#fff;margin:28px 0 0;}
+  .nfcbody p{font-size:11px;line-height:1.6;color:rgba(255,255,255,.6);margin:6px 0 0;}
+  .nfcbody .ready{display:flex;align-items:center;gap:6px;margin-top:16px;font-size:9px;
+    letter-spacing:1.3px;font-weight:600;color:rgba(255,255,255,.72);}
+  .nfcbody .ready i{width:5px;height:5px;border-radius:50%;background:var(--mint);}
+
+  /* ------------------------------------------------ bottom navigation pill */
+  .nav{position:absolute;bottom:10px;left:14px;right:14px;z-index:30;background:var(--card);
+    border-radius:24px;padding:4px;display:flex;box-shadow:var(--shadow);border:1px solid var(--hair2);}
+  .nav .item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:7px 0;border-radius:16px;color:var(--ink3);font-size:8.5px;font-weight:500;cursor:pointer;}
+  .nav .item svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .nav .item.on{background:var(--btn);color:var(--on-btn);font-weight:600;}
+
+  /* S24 Ultra Android Bottom Gesture Line */
+  .gesture-bar{
+    position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+    width:90px;height:3px;border-radius:999px;background:rgba(0,0,0,.25);z-index:45;pointer-events:none;
+  }
+  body[data-mode="dark"] .gesture-bar{background:rgba(255,255,255,.3);}
+</style>
 </head>
-<body data-mode="light" data-accent="blue" class="bg-[#0B0E17] text-[#E0E4EE] flex flex-col items-center justify-start min-h-screen p-3 md:p-6 select-none font-sans">
+<body data-mode="light" data-accent="blue">
 
-  <!-- Top Controller Toolbar -->
-  <div class="w-full max-w-2xl mb-4 bg-[#141824] border border-white/10 rounded-2xl p-2.5 shadow-xl flex items-center justify-between flex-wrap gap-2">
-    <div class="flex items-center gap-1.5 flex-wrap">
-      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-widest bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-        Galaxy S24 Ultra (19.5:9)
-      </span>
-      <button onclick="goTo('hub')" id="top-hub" class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-white text-[#0B0F19] transition">Focus</button>
-      <button onclick="goTo('active')" id="top-active" class="px-2.5 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Timer Dial</button>
-      <button onclick="goTo('vault')" id="top-vault" class="px-2.5 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Keys</button>
-      <button onclick="goTo('scanner-qr')" id="top-scanner-qr" class="px-2.5 py-1 rounded-xl text-xs font-bold text-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 transition flex items-center gap-1">
-        <span>📷</span> QR/Barcode
-      </button>
-      <button onclick="goTo('scanner-nfc')" id="top-scanner-nfc" class="px-2.5 py-1 rounded-xl text-xs font-bold text-cyan-400 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 transition flex items-center gap-1">
-        <span>💳</span> NFC Tap
-      </button>
-      <button onclick="goTo('notes')" id="top-notes" class="px-2.5 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Notes</button>
-      <button onclick="goTo('analytics')" id="top-analytics" class="px-2.5 py-1 rounded-xl text-xs font-medium text-white/70 hover:text-white transition">Stats</button>
+  <!-- Top Controller Bar with Direct Access to All Screens -->
+  <div class="top-ctrl">
+    <div class="screen-tabs">
+      <button onclick="switchScreen('hub')" id="tab-hub" class="on">Today</button>
+      <button onclick="switchScreen('active')" id="tab-active">Timer Dial</button>
+      <button onclick="switchScreen('vault')" id="tab-vault">Vault</button>
+      <button onclick="switchScreen('analytics')" id="tab-analytics">Analytics</button>
+      <button onclick="switchScreen('notes')" id="tab-notes">Notes</button>
+      <button onclick="switchScreen('qr')" id="tab-qr" class="special">📷 QR Scanner</button>
+      <button onclick="switchScreen('nfc')" id="tab-nfc" class="special-nfc">💳 NFC Tap</button>
     </div>
 
-    <!-- Mode and Accent Switches -->
-    <div class="flex items-center gap-2">
-      <div class="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10">
-        <button onclick="setAccent('blue')" id="acc-blue" class="w-4 h-4 rounded-full bg-[#3E6DF3] ring-2 ring-white" title="Blue"></button>
-        <button onclick="setAccent('green')" id="acc-green" class="w-4 h-4 rounded-full bg-[#2E9E77] ring-0" title="Green"></button>
-        <button onclick="setAccent('red')" id="acc-red" class="w-4 h-4 rounded-full bg-[#DC4B52] ring-0" title="Red"></button>
+    <div class="top-right">
+      <div class="swatches" id="accentSeg">
+        <button class="sw blue on" data-accent="blue" aria-label="Blue"></button>
+        <button class="sw green" data-accent="green" aria-label="Green"></button>
+        <button class="sw red" data-accent="red" aria-label="Red"></button>
       </div>
-
-      <button onclick="toggleTheme()" id="theme-btn" class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition flex items-center gap-1.5 border border-white/10">
-        <span id="theme-icon">☀️</span> <span id="theme-label">Light</span>
-      </button>
+      <button class="mode-toggle" id="modeBtn" onclick="toggleMode()">☀️ Light</button>
     </div>
   </div>
 
-  <!-- S24 Ultra Device Chassis (Responsive Auto-Fit) -->
-  <div class="relative s24-chassis flex flex-col overflow-hidden">
-    
-    <!-- Flat 19.5:9 Screen -->
-    <div id="phone-screen" class="relative s24-screen screen-bg transition-colors duration-300">
+  <!-- Samsung Galaxy S24 Ultra Device Chassis (19.5:9 aspect ratio, sharp boxy corners) -->
+  <div class="phone-s24" id="phoneChassis">
+    <div class="screen">
       
-      <!-- S24 Ultra Status Bar with Centered Circular Camera Cutout -->
-      <div class="relative z-40 w-full pt-2.5 px-6 pb-1 flex items-center justify-between text-xs font-semibold" style="color:var(--hdr);">
-        <span id="live-clock" class="tracking-tight text-[12.5px]">09:41</span>
-        
-        <!-- S24 Ultra Centered Punch-Hole Camera -->
-        <div class="w-3.5 h-3.5 rounded-full bg-black ring-1 ring-white/20 flex items-center justify-center shadow-inner cursor-pointer" onclick="goTo('active')">
-          <div class="w-1.5 h-1.5 rounded-full bg-[#0D1828]"></div>
-        </div>
-
-        <div class="flex items-center gap-1.5 opacity-90">
-          <span class="text-[10px] font-bold">5G</span>
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4z"/></svg>
-          <div class="w-4 h-2.5 border border-current rounded-[2px] p-[1px] flex items-center">
-            <div class="w-full h-full bg-current rounded-[1px]"></div>
+      <!-- S24 Ultra Status Bar + Centered Punch-Hole Camera -->
+      <div class="status-bar">
+        <span id="liveClock">09:41</span>
+        <div class="camera-hole" title="S24 Ultra Centered Front Camera"></div>
+        <div class="status-right">
+          <span style="font-size:10px;font-weight:700;">5G</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4z"/></svg>
+          <div style="width:16px;height:8px;border:1px solid currentColor;border-radius:2px;padding:1px;display:flex;align-items:center;">
+            <div style="width:100%;height:100%;background:currentColor;border-radius:1px;"></div>
           </div>
         </div>
       </div>
 
-      <!-- Scrollable App Content -->
-      <div id="scroll-container" class="relative flex-1 overflow-y-auto no-scrollbar px-5 pt-1 pb-24 text-[var(--ink)]">
-        
-        <!-- ========================================================== -->
-        <!-- SCREEN 1: FOCUS HUB (TODAY)                                 -->
-        <!-- ========================================================== -->
-        <div id="view-hub" class="flex flex-col space-y-3.5">
-          <div class="flex items-start justify-between mt-1">
-            <div>
-              <h1 class="text-3xl font-normal tracking-tight" style="color:var(--hdr);">Today</h1>
-              <p class="text-xs opacity-75 mt-0.5" style="color:var(--hdr);">Wed, Aug 6 &middot; 5 Day Streak 🔥</p>
+      <!-- ========================================================== -->
+      <!-- VIEW 1: TODAY (FOCUS HUB)                                  -->
+      <!-- ========================================================== -->
+      <div id="view-hub" class="scroll" style="display:flex;">
+        <div class="hdr">
+          <div>
+            <h1>Today</h1>
+            <p>Wed, Aug 6</p>
+          </div>
+          <div class="hdr-right">
+            <div class="gear" onclick="switchScreen('notes')" title="Settings / Notes">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
             </div>
-            
-            <div class="flex items-center gap-2">
-              <button onclick="goTo('settings')" class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 border border-white/30 text-white spring-btn" title="Settings">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
-              </button>
-              
-              <div class="flex flex-col items-center">
-                <div class="relative w-10 h-10 flex items-center justify-center">
-                  <svg class="w-full h-full -rotate-90" viewBox="0 0 44 44">
-                    <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
-                    <circle cx="22" cy="22" r="18" fill="none" stroke="var(--hdr)" stroke-width="3" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="47"/>
-                  </svg>
-                  <span class="absolute text-[10px] font-bold" style="color:var(--hdr);">58%</span>
-                </div>
-                <span class="text-[7.5px] font-semibold tracking-wider opacity-75 mt-0.5" style="color:var(--hdr);">GOAL</span>
+            <div class="ringwrap">
+              <div class="ring">
+                <svg width="40" height="40" viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="19" fill="none" stroke="color-mix(in srgb,var(--hdr) 22%,transparent)" stroke-width="2.5"/>
+                  <circle cx="22" cy="22" r="19" fill="none" stroke="var(--hdr)" stroke-width="2.5"
+                    stroke-linecap="round" pathLength="100" stroke-dasharray="58 100"
+                    transform="rotate(-90 22 22)"/>
+                </svg>
+                <div class="pct">58%</div>
               </div>
-            </div>
-          </div>
-
-          <!-- Module Rail -->
-          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
-            <button onclick="selectModule('SC2008', this)" class="mod-chip px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--btn)] text-[var(--on-btn)] flex items-center gap-1.5 whitespace-nowrap shadow-xs">
-              <span class="w-1.5 h-1.5 rounded-full bg-current"></span> SC2008
-            </button>
-            <button onclick="selectModule('SC2002', this)" class="mod-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white/25 text-white flex items-center gap-1.5 whitespace-nowrap">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> SC2002
-            </button>
-            <button onclick="selectModule('SC2006', this)" class="mod-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white/25 text-white flex items-center gap-1.5 whitespace-nowrap">
-              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> SC2006
-            </button>
-            <button class="px-2.5 py-1.5 rounded-full text-xs border border-dashed border-white/50 text-white whitespace-nowrap">+ Add</button>
-          </div>
-
-          <!-- White Focus Card -->
-          <div class="card-glass p-5 space-y-2">
-            <div class="flex items-center justify-between text-[9px] font-bold tracking-wider">
-              <span style="color:var(--ink3);">TODAY'S FOCUS</span>
-              <span class="px-2 py-0.5 rounded-full font-semibold" style="background:color-mix(in srgb,var(--accent) 12%,transparent); color:var(--accent);">
-                70m / 120m
-              </span>
-            </div>
-
-            <h2 id="focus-title" class="text-xl font-bold tracking-tight mt-1" style="color:var(--ink);">Computer Networks</h2>
-            <p class="text-xs leading-relaxed mt-0.5" style="color:var(--ink2);">Finish the socket programming problem set, then review congestion control.</p>
-
-            <div class="flex items-center justify-between mt-3 pt-2 border-t" style="border-color:var(--hair2);">
-              <div class="flex items-center gap-1">
-                <button onclick="setDuration(25, this)" class="dur-btn px-2.5 py-1 rounded-full text-[11px] font-medium bg-black/5 dark:bg-white/5">25m</button>
-                <button onclick="setDuration(50, this)" class="dur-btn px-2.5 py-1 rounded-full text-[11px] font-bold bg-[var(--btn)] text-[var(--on-btn)]">50m</button>
-                <button onclick="setDuration(90, this)" class="dur-btn px-2.5 py-1 rounded-full text-[11px] font-medium bg-black/5 dark:bg-white/5">90m</button>
-              </div>
-              <span class="text-[10px] font-medium" style="color:var(--ink3);">Ends 4:30 PM</span>
-            </div>
-
-            <!-- Start Session CTA -->
-            <button onclick="startSession()" class="w-full mt-3 h-11 rounded-full font-bold text-xs flex items-center justify-center gap-2 shadow-md spring-btn"
-                    style="background:var(--btn); color:var(--on-btn);">
-              Start Session
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </button>
-          </div>
-
-          <!-- Lock Mode Selector (No Posture Limits) -->
-          <div class="flex items-center gap-1.5 px-1 pt-1">
-            <span class="text-[9px] font-bold tracking-widest" style="color:var(--ink3);">LOCK:</span>
-            <button onclick="setLockMode('manual', this)" class="lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[var(--btn)] text-[var(--on-btn)]">▶ Manual</button>
-            <button onclick="goTo('scanner-qr')" class="lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-black/5 dark:bg-white/5 hover:bg-emerald-500/20" style="color:var(--ink2);">📷 Barcode</button>
-            <button onclick="goTo('scanner-nfc')" class="lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-black/5 dark:bg-white/5 hover:bg-cyan-500/20" style="color:var(--ink2);">💳 NFC Card</button>
-          </div>
-
-          <!-- Quick Scanner Callout -->
-          <div class="card-glass p-3 flex items-center justify-between text-xs">
-            <div class="flex items-center gap-2">
-              <span class="text-base">⚡</span>
-              <div>
-                <div class="font-bold text-xs" style="color:var(--ink);">Hardware Scanner Test</div>
-                <div class="text-[10px]" style="color:var(--ink3);">Direct access to optical &amp; NFC readers</div>
-              </div>
-            </div>
-            <div class="flex gap-1.5">
-              <button onclick="goTo('scanner-qr')" class="px-2.5 py-1 rounded-xl font-bold text-xs bg-emerald-500 text-white spring-btn">📷 QR</button>
-              <button onclick="goTo('scanner-nfc')" class="px-2.5 py-1 rounded-xl font-bold text-xs bg-cyan-600 text-white spring-btn">💳 NFC</button>
+              <span class="cap">GOAL</span>
             </div>
           </div>
         </div>
 
-        <!-- ========================================================== -->
-        <!-- SCREEN 2: ACTIVE LOCKED DIAL                               -->
-        <!-- ========================================================== -->
-        <div id="view-active" class="hidden flex flex-col items-center justify-between min-h-full py-2">
-          <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2E9E77]/15 border border-[#2E9E77]/30 text-[#2E9E77] text-[10px] font-bold tracking-widest">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#2E9E77] animate-ping"></span>
-            LOCKED IN
-          </div>
+        <div class="chips">
+          <div class="chip on"><i></i>SC2008</div>
+          <div class="chip"><i></i>SC2002</div>
+          <div class="chip"><i></i>SC2006</div>
+          <div class="chip dash">+ Add</div>
+        </div>
 
-          <!-- Minimalist Dial -->
-          <div class="relative w-56 h-56 flex items-center justify-center my-3">
-            <svg class="w-full h-full -rotate-90" viewBox="0 0 250 250">
-              <circle cx="125" cy="125" r="114" fill="none" stroke="currentColor" stroke-width="1.5" class="opacity-15"/>
-              <circle cx="125" cy="125" r="114" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="716" stroke-dashoffset="180" class="opacity-50"/>
-              <circle cx="125" cy="125" r="102" fill="none" stroke="currentColor" stroke-width="3" class="opacity-10"/>
-              <circle id="active-ring-inner" cx="125" cy="125" r="102" fill="none" stroke="var(--accent)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="640" stroke-dashoffset="160"/>
-            </svg>
-            <div class="absolute flex flex-col items-center justify-center">
-              <span id="active-timer-text" class="text-5xl font-light tracking-tighter" style="font-variant-numeric:tabular-nums; color:var(--ink);">42:18</span>
-              <span id="active-state-sub" class="text-[11px] font-medium mt-1 px-2.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10" style="color:var(--ink2);">Studying: SC2008</span>
-            </div>
+        <div class="card">
+          <div class="row">
+            <span class="eyebrow">TODAY'S FOCUS</span>
+            <span class="goalchip">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h9l-1 3 1 3H5"/><path d="M18 21V4"/></svg>
+              70m / 120m
+            </span>
           </div>
-
-          <div class="w-full card-glass p-3.5 mb-3">
-            <div class="flex items-center justify-between text-[9px] font-bold">
-              <span style="color:var(--ink3);">THIS WEEK'S GOAL</span>
-              <span style="color:var(--accent);">71m / 120m</span>
-            </div>
-            <p class="text-xs font-semibold mt-1" style="color:var(--ink);">Finish the socket programming problem set</p>
+          <h2>Computer Networks</h2>
+          <p class="body">Finish the socket programming problem set, then skim chapter 4 on congestion control.</p>
+          <div class="meta">
+            <div class="durs"><span class="dur">25m</span><span class="dur on">50m</span><span class="dur">90m</span></div>
+            <span class="ends">Ends 4:30 PM</span>
           </div>
-
-          <!-- Actions -->
-          <div class="w-full flex flex-col gap-2">
-            <div class="flex gap-2">
-              <button onclick="togglePause()" id="pause-btn" class="flex-1 h-10 rounded-full font-semibold text-xs bg-black/5 dark:bg-white/10 flex items-center justify-center gap-1.5 spring-btn">
-                <span id="pause-icon">⏸</span> <span id="pause-text">Pause</span>
-              </button>
-              <button onclick="confirmStop()" class="flex-1 h-10 rounded-full font-semibold text-xs bg-rose-500/15 text-rose-500 hover:bg-rose-500/25 flex items-center justify-center gap-1.5 spring-btn">
-                <span>⏹</span> Stop
-              </button>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-2">
-              <button onclick="goTo('scanner-qr')" class="h-10 rounded-2xl card-glass flex items-center justify-center gap-1 text-xs font-bold spring-btn" style="color:var(--ink);">
-                <span>📷</span> Scan Barcode
-              </button>
-              <button onclick="goTo('scanner-nfc')" class="h-10 rounded-2xl card-glass flex items-center justify-center gap-1 text-xs font-bold spring-btn" style="color:var(--ink);">
-                <span>💳</span> Tap NFC Card
-              </button>
-            </div>
+          <div class="cta" onclick="startTimerSession()">
+            Start Session
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </div>
         </div>
 
-        <!-- ========================================================== -->
-        <!-- SCREEN 3: TRIGGER VAULT                                    -->
-        <!-- ========================================================== -->
-        <div id="view-vault" class="hidden flex flex-col space-y-3">
-          <div class="flex items-center justify-between mt-1">
-            <div>
-              <h1 class="text-2xl font-bold tracking-tight" style="color:var(--hdr);">Trigger Vault</h1>
-              <p class="text-xs opacity-75 mt-0.5" style="color:var(--hdr);">Tap a card to test hardware engine</p>
-            </div>
-            <button onclick="openRegisterChoiceModal()" class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 text-white font-bold text-base spring-btn">+</button>
-          </div>
-
-          <!-- Key 1: Optical Barcode Key (Clickable -> Opens Barcode Scanner) -->
-          <div onclick="goTo('scanner-qr')" class="card-glass p-3.5 flex items-center justify-between cursor-pointer hover:ring-2 hover:ring-blue-500 transition">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style="background:color-mix(in srgb,var(--accent) 15%,transparent); color:var(--accent);">
-                📷
-              </div>
-              <div>
-                <div class="text-xs font-bold" style="color:var(--ink);">Desk Water Bottle</div>
-                <div class="text-[10px] flex items-center gap-1 mt-0.5" style="color:var(--ink3);">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#2E9E77]"></span> Barcode &middot; Tap to open scanner
-                </div>
-              </div>
-            </div>
-            <span class="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2.5 py-1 rounded-full">SCAN →</span>
-          </div>
-
-          <!-- Key 2: Contactless NFC Key (Clickable -> Opens NFC Reader) -->
-          <div onclick="goTo('scanner-nfc')" class="card-glass p-3.5 flex items-center justify-between cursor-pointer hover:ring-2 hover:ring-cyan-500 transition">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-[#2E9E77]/15 text-[#2E9E77]">
-                💳
-              </div>
-              <div>
-                <div class="text-xs font-bold" style="color:var(--ink);">Student Matric Card</div>
-                <div class="text-[10px] flex items-center gap-1 mt-0.5" style="color:var(--ink3);">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#2E9E77]"></span> NFC Tag &middot; Tap to read UID
-                </div>
-              </div>
-            </div>
-            <span class="text-[10px] font-bold text-cyan-600 bg-cyan-500/10 px-2.5 py-1 rounded-full">TAP →</span>
-          </div>
-
-          <!-- Key 3: Wi-Fi Zone -->
-          <div class="card-glass p-3.5 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-violet-500/15 text-violet-500">
-                📍
-              </div>
-              <div>
-                <div class="text-xs font-bold" style="color:var(--ink);">Library L3 Wi-Fi</div>
-                <div class="text-[10px]" style="color:var(--ink3);">Study Zone &middot; Idle</div>
-              </div>
-            </div>
-            <span class="text-[10px] font-bold opacity-60 px-2.5 py-1 rounded-full bg-black/10 dark:bg-white/10">ZONE</span>
-          </div>
-
-          <button onclick="openRegisterChoiceModal()" class="w-full py-3 rounded-full border border-dashed text-xs font-semibold text-center transition spring-btn" style="border-color:var(--ink3); color:var(--ink2);">
-            + Register New Key (Camera or NFC)
-          </button>
+        <div class="lockrow">
+          <span class="eyebrow">LOCK</span>
+          <span class="mchip on"><svg viewBox="0 0 24 24"><path d="M8 5l12 7-12 7V5z"/></svg>Manual</span>
+          <span class="mchip" onclick="switchScreen('qr')"><svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Barcode</span>
+          <span class="mchip" onclick="switchScreen('nfc')"><svg viewBox="0 0 24 24"><path d="M6 9a9 9 0 000 6M10 6.5a13 13 0 010 11M14 5a17 17 0 010 14"/></svg>Card</span>
         </div>
 
-        <!-- ========================================================== -->
-        <!-- SCREEN 4: OPTICAL BARCODE / QR SCANNER (DIRECT ACCESS)     -->
-        <!-- ========================================================== -->
-        <div id="view-scanner-qr" class="hidden flex flex-col h-full rounded-2xl bg-black text-white p-4 justify-between">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-base font-bold flex items-center gap-1.5 text-emerald-400">
-                <span>📷</span> Optical Barcode Scanner
-              </div>
-              <div class="text-[10.5px] text-white/60">CameraX + ML Kit Barcode Model</div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="goTo('scanner-nfc')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/20 hover:bg-white/30 text-white transition">
-                Switch to NFC 💳
-              </button>
-              <button onclick="goTo('vault')" class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">&times;</button>
-            </div>
+        <div class="tl">
+          <div class="tl-head">
+            <span class="eyebrow">TIMELINE</span>
+            <span class="r">Aug 5 – 11</span>
           </div>
-
-          <!-- Camera Viewfinder -->
-          <div class="relative w-52 h-52 mx-auto my-auto border-2 border-white/25 rounded-2xl flex items-center justify-center overflow-hidden bg-white/5">
-            <div class="laser-line"></div>
-            <!-- Corners -->
-            <div class="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2" style="border-color:var(--accent);"></div>
-            <div class="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2" style="border-color:var(--accent);"></div>
-            <div class="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2" style="border-color:var(--accent);"></div>
-            <div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2" style="border-color:var(--accent);"></div>
-            
-            <div class="text-[10.5px] text-white/70 text-center px-4 z-10">
-              Point camera at barcode (Water Bottle, Textbook, Snack)
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <button onclick="simulateSuccess('Barcode Key: Desk Water Bottle (Code128)')" class="w-full py-2.5 rounded-full font-bold text-xs bg-white text-black shadow-lg spring-btn">
-              Simulate Barcode Scan Success ✓
-            </button>
-            <div class="flex items-center justify-around text-xs text-white/70">
-              <span class="cursor-pointer hover:text-white">🔦 Torch: Off</span>
-              <span>&bull;</span>
-              <span class="cursor-pointer hover:text-white" onclick="goTo('vault')">Back to Vault</span>
-            </div>
+          <div class="days">
+            <div class="day done"><span>T</span><i></i></div>
+            <div class="day done"><span>W</span><i></i></div>
+            <div class="day done"><span>T</span><i></i></div>
+            <div class="day today"><span>F</span><i></i></div>
+            <div class="day"><span>S</span><i></i></div>
+            <div class="day"><span>S</span><i></i></div>
+            <div class="day"><span>M</span><i></i></div>
           </div>
         </div>
-
-        <!-- ========================================================== -->
-        <!-- SCREEN 5: CONTACTLESS NFC TAG READER (DIRECT ACCESS)        -->
-        <!-- ========================================================== -->
-        <div id="view-scanner-nfc" class="hidden flex flex-col h-full rounded-2xl bg-[#060E14] text-white p-4 justify-between">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-base font-bold flex items-center gap-1.5 text-cyan-400">
-                <span>💳</span> Contactless NFC Reader
-              </div>
-              <div class="text-[10.5px] text-white/60">Android enableReaderMode() Raw UID</div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="goTo('scanner-qr')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/20 hover:bg-white/30 text-white transition">
-                Switch to QR 📷
-              </button>
-              <button onclick="goTo('vault')" class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">&times;</button>
-            </div>
-          </div>
-
-          <!-- Radar Sonar Area -->
-          <div class="relative w-48 h-48 mx-auto my-auto flex items-center justify-center">
-            <div class="sonar-ring"></div>
-            <div class="sonar-ring"></div>
-            <div class="sonar-ring"></div>
-            <div class="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-2xl z-10 shadow-lg">
-              📡
-            </div>
-          </div>
-
-          <div class="flex flex-col items-center gap-1.5 text-center">
-            <h4 class="text-sm font-bold text-white">Hold card against back of S24 Ultra</h4>
-            <p class="text-[10.5px] text-white/60 px-4">Reads student card UID: 04:52:8A:1C. No balances or personal data accessed.</p>
-            <button onclick="simulateSuccess('NFC Card: Student ID (UID: 04:52:8A:1C)')" class="w-full mt-2 py-2.5 rounded-full font-bold text-xs bg-cyan-400 text-black shadow-lg spring-btn">
-              Simulate NFC Card Tap ✓
-            </button>
-          </div>
-        </div>
-
-        <!-- ========================================================== -->
-        <!-- SCREEN 6: WEEKLY NOTES                                     -->
-        <!-- ========================================================== -->
-        <div id="view-notes" class="hidden flex flex-col space-y-3">
-          <div class="flex items-center justify-between mt-1">
-            <div>
-              <h1 class="text-2xl font-bold tracking-tight" style="color:var(--hdr);">This Week</h1>
-              <p class="text-xs opacity-75 mt-0.5" style="color:var(--hdr);">Oct 19 &ndash; 25 &middot; <span id="notes-done-count">2</span>/5 done</p>
-            </div>
-          </div>
-
-          <div class="card-glass p-4 space-y-2.5">
-            <div class="flex items-center justify-between text-[10px] font-bold">
-              <span style="color:var(--ink3);">WEEKLY GOALS</span>
-              <span class="px-2 py-0.5 rounded-full font-bold" style="background:color-mix(in srgb,var(--accent) 12%,transparent); color:var(--accent);">2 / 5</span>
-            </div>
-
-            <div class="flex items-center gap-2.5 py-0.5 cursor-pointer" onclick="toggleGoal(this)">
-              <div class="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs text-white" style="background:var(--accent);">✓</div>
-              <span class="text-xs line-through flex-1" style="color:var(--ink3);">Finish SC2008 assignment 2</span>
-            </div>
-            <div class="flex items-center gap-2.5 py-0.5 cursor-pointer" onclick="toggleGoal(this)">
-              <div class="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs text-white" style="background:var(--accent);">✓</div>
-              <span class="text-xs line-through flex-1" style="color:var(--ink3);">Read chapter 6 before Thursday</span>
-            </div>
-            <div class="flex items-center gap-2.5 py-0.5 cursor-pointer" onclick="toggleGoal(this)">
-              <div class="w-5 h-5 rounded-md border border-black/25 dark:border-white/25 flex items-center justify-center text-xs"></div>
-              <span class="text-xs flex-1" style="color:var(--ink);">Three SC2008 sessions before Friday</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ========================================================== -->
-        <!-- SCREEN 7: STUDY ANALYTICS                                   -->
-        <!-- ========================================================== -->
-        <div id="view-analytics" class="hidden flex flex-col space-y-3">
-          <h1 class="text-2xl font-bold tracking-tight mt-1" style="color:var(--hdr);">Study Analytics</h1>
-          
-          <div class="grid grid-cols-3 gap-2">
-            <div class="card-glass p-2.5"><div class="text-lg font-bold" style="color:var(--ink);">24.5h</div><div class="text-[9px]" style="color:var(--ink3);">Total Focus</div></div>
-            <div class="card-glass p-2.5"><div class="text-lg font-bold text-emerald-600">92%</div><div class="text-[9px]" style="color:var(--ink3);">Lock-In</div></div>
-            <div class="card-glass p-2.5"><div class="text-lg font-bold" style="color:var(--accent);">5d</div><div class="text-[9px]" style="color:var(--ink3);">Streak</div></div>
-          </div>
-        </div>
-
-        <!-- ========================================================== -->
-        <!-- SCREEN 8: SETTINGS                                         -->
-        <!-- ========================================================== -->
-        <div id="view-settings" class="hidden flex flex-col space-y-3">
-          <div class="flex items-center justify-between mt-1">
-            <h1 class="text-2xl font-bold tracking-tight" style="color:var(--hdr);">Settings</h1>
-            <button onclick="goTo('hub')" class="text-xs font-semibold px-3 py-1 rounded-full bg-white/20 text-white">Done</button>
-          </div>
-
-          <div class="card-glass p-4 space-y-3">
-            <div class="text-[10px] font-bold tracking-wider" style="color:var(--ink3);">APPEARANCE</div>
-            <div class="flex items-center justify-between text-xs">
-              <span style="color:var(--ink);">Theme Mode</span>
-              <button onclick="toggleTheme()" class="px-3 py-1 rounded-lg text-xs font-semibold bg-black/5 dark:bg-white/10" style="color:var(--ink);">
-                Toggle Light/Dark
-              </button>
-            </div>
-          </div>
-        </div>
-
       </div>
 
-      <!-- S24 Ultra Floating Bottom Navigation Bar -->
-      <div id="bottom-nav" class="absolute bottom-4 left-4 right-4 h-14 rounded-2xl card-glass flex items-center justify-around px-2 shadow-lg z-30 transition-all duration-300">
-        <button onclick="goTo('hub')" id="nav-hub" class="flex flex-col items-center gap-0.5 text-[9px] font-semibold text-[var(--accent)] spring-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Focus
-        </button>
-        <button onclick="goTo('vault')" id="nav-vault" class="flex flex-col items-center gap-0.5 text-[9px] font-medium opacity-60 hover:opacity-100 spring-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Keys
-        </button>
-        <button onclick="goTo('notes')" id="nav-notes" class="flex flex-col items-center gap-0.5 text-[9px] font-medium opacity-60 hover:opacity-100 spring-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Notes
-        </button>
-        <button onclick="goTo('analytics')" id="nav-analytics" class="flex flex-col items-center gap-0.5 text-[9px] font-medium opacity-60 hover:opacity-100 spring-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Stats
-        </button>
+      <!-- ========================================================== -->
+      <!-- VIEW 2: ACTIVE LOCKED DIAL                                 -->
+      <!-- ========================================================== -->
+      <div id="view-active" class="scroll" style="display:none;">
+        <div class="locked">
+          <div class="status"><i></i>LOCKED IN</div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;width:100%;">
+            <div class="dial">
+              <svg width="220" height="220" viewBox="0 0 250 250">
+                <circle cx="125" cy="125" r="122" fill="none" stroke="color-mix(in srgb,var(--ink) 7%,transparent)" stroke-width="1"/>
+                <circle cx="125" cy="125" r="122" fill="none" stroke="color-mix(in srgb,var(--accent) 45%,transparent)"
+                  stroke-width="1" stroke-linecap="round" pathLength="100" stroke-dasharray="72 100"
+                  transform="rotate(-90 125 125)"/>
+                <circle cx="125" cy="125" r="110" fill="none" stroke="color-mix(in srgb,var(--ink) 8%,transparent)" stroke-width="2.5"/>
+                <circle id="timerProgressArc" cx="125" cy="125" r="110" fill="none" stroke="var(--accent)" stroke-width="2.5"
+                  stroke-linecap="round" pathLength="100" stroke-dasharray="72 100"
+                  transform="rotate(-90 125 125)"/>
+              </svg>
+              <div class="center"><div class="time" id="countdownTime">42:18</div></div>
+            </div>
+
+            <div class="pillrow" style="margin-top:12px;"><i></i>Studying: SC2008</div>
+
+            <div class="card" style="margin-top:12px;width:100%;">
+              <div class="row">
+                <span class="eyebrow" style="display:flex;align-items:center;gap:6px;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h9l-1 3 1 3H5"/><path d="M18 21V4"/></svg>
+                  THIS WEEK'S GOAL
+                </span>
+                <span style="font-size:9.5px;font-weight:600;color:var(--accent);">71m / 120m</span>
+              </div>
+              <p class="body" style="margin-top:6px;">Finish the socket programming problem set</p>
+              <div style="margin-top:8px;height:4px;border-radius:999px;background:color-mix(in srgb,var(--ink) 8%,transparent);overflow:hidden;">
+                <div style="width:59%;height:100%;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 55%,transparent),var(--accent));"></div>
+              </div>
+              <div style="margin-top:5px;font-size:9px;color:var(--ink3);">49m left to hit this week's target.</div>
+            </div>
+          </div>
+
+          <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:10px;">
+            <div style="display:flex;gap:8px;">
+              <div class="ghost" id="pauseBtn" onclick="togglePause()"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg><span id="pauseLabel">Pause</span></div>
+              <div class="ghost" style="color:var(--coral);" onclick="confirmStopTimer()"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stop</div>
+            </div>
+            <div class="unlock" style="width:100%;" onclick="switchScreen('qr')">
+              <div class="l">
+                <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
+                Scan Barcode or NFC Card to Unlock
+              </div>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 3: TRIGGER VAULT                                      -->
+      <!-- ========================================================== -->
+      <div id="view-vault" class="scroll" style="display:none;">
+        <div class="page-head">
+          <h1 class="page-title">Trigger Vault</h1>
+          <div class="skybtn" onclick="openChoiceModal()">
+            <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
+          </div>
+        </div>
+
+        <div class="sechead">
+          <span class="t">Saved Physical Keys</span>
+          <span class="badge">3 REGISTERED</span>
+        </div>
+
+        <!-- Key 1: Optical Barcode Key -> Tapping opens QR Scanner -->
+        <div class="keyrow" onclick="switchScreen('qr')">
+          <div class="kicon" style="background:color-mix(in srgb,var(--accent) 11%,transparent);color:var(--accent);">
+            <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
+          </div>
+          <div class="mid">
+            <div class="name">Desk Bottle (Optical)</div>
+            <div class="st"><i></i>Ready &middot; Tap to open scanner</div>
+          </div>
+          <div class="switch"><i></i></div>
+        </div>
+
+        <!-- Key 2: Contactless NFC Card Key -> Tapping opens NFC Tap -->
+        <div class="keyrow" onclick="switchScreen('nfc')">
+          <div class="kicon" style="background:color-mix(in srgb,var(--mint) 11%,transparent);color:var(--mint);">
+            <svg viewBox="0 0 24 24"><path d="M6 9a9 9 0 000 6M10 6.5a13 13 0 010 11M14 5a17 17 0 010 14"/></svg>
+          </div>
+          <div class="mid">
+            <div class="name">Student ID</div>
+            <div class="st"><i></i>NFC &middot; 04:52:8A:1C &middot; Tap to read</div>
+          </div>
+          <div class="switch"><i></i></div>
+        </div>
+
+        <!-- Key 3: Wi-Fi Zone -->
+        <div class="keyrow">
+          <div class="kicon" style="background:color-mix(in srgb,var(--violet) 11%,transparent);color:var(--violet);">
+            <svg viewBox="0 0 24 24"><path d="M3 12h18M6 12v4M12 12v4M18 12v4"/></svg>
+          </div>
+          <div class="mid">
+            <div class="name">Library L3 Wi-Fi</div>
+            <div class="st" style="color:var(--ink3);"><i style="background:var(--ink3);"></i>Zone &middot; idle</div>
+          </div>
+          <div class="switch" style="background:color-mix(in srgb,var(--ink) 14%,transparent);"><i style="right:auto;left:2px;"></i></div>
+        </div>
+
+        <div class="register" onclick="openChoiceModal()">+ &nbsp;Register New (Barcode or NFC)</div>
+
+        <div class="note">Keys only arm the lock or release it early — nothing interrupts a running session. No accelerometer or posture restrictions.</div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 4: STUDY ANALYTICS (100% RESTORED IN FULL)            -->
+      <!-- ========================================================== -->
+      <div id="view-analytics" class="scroll" style="display:none;">
+        <div class="page-head">
+          <h1 class="page-title">Study Analytics</h1>
+          <div class="skybtn" onclick="alert('Exporting session history CSV...')">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+        </div>
+
+        <!-- 3 Primary Metric Cards -->
+        <div class="metrics">
+          <div class="metric">
+            <div class="v">24.5h</div>
+            <div class="l">Total Focus</div>
+            <div class="s" style="color:var(--accent);">↑ +18%</div>
+          </div>
+          <div class="metric">
+            <div class="v">92%</div>
+            <div class="l">Lock-In Rate</div>
+            <div class="s" style="color:var(--mint);">● On track</div>
+          </div>
+          <div class="metric">
+            <div class="v">18</div>
+            <div class="l">Sessions</div>
+            <div class="s" style="color:var(--ink3);">this week</div>
+          </div>
+        </div>
+
+        <!-- Last 7 Days Interactive Bar Chart -->
+        <div class="card chart">
+          <div class="row"><span class="eyebrow">LAST 7 DAYS</span><span class="ends">hours</span></div>
+          <div class="bars">
+            <div class="bcol"><div class="b" style="height:38%"></div><span class="d">M</span></div>
+            <div class="bcol"><div class="b" style="height:62%"></div><span class="d">T</span></div>
+            <div class="bcol on"><div class="b" style="height:88%"></div><span class="d">W</span></div>
+            <div class="bcol"><div class="b" style="height:46%"></div><span class="d">T</span></div>
+            <div class="bcol"><div class="b" style="height:70%"></div><span class="d">F</span></div>
+            <div class="bcol"><div class="b" style="height:28%"></div><span class="d">S</span></div>
+            <div class="bcol"><div class="b" style="height:16%"></div><span class="d">S</span></div>
+          </div>
+        </div>
+
+        <!-- Last 12 Weeks 24-Square Study Heatmap + Course Breakdown -->
+        <div class="card">
+          <div class="row"><span class="eyebrow">LAST 12 WEEKS</span><span class="ends">avg 3.4h</span></div>
+          <div class="heat">
+            <i style="background:color-mix(in srgb,var(--accent) 12%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 34%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 18%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 55%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 26%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 72%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 40%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 20%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 62%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 30%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 86%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 48%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 22%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 44%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 66%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 14%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 38%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 58%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 80%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 28%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 50%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 68%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 34%,transparent)"></i>
+            <i style="background:color-mix(in srgb,var(--accent) 90%,transparent)"></i>
+          </div>
+
+          <div class="courserow"><span class="dot" style="background:var(--accent)"></span>SC2008 Computer Networks<span class="val">9.5h</span></div>
+          <div class="courserow"><span class="dot" style="background:var(--mint)"></span>SC2002 OOP<span class="val">7.2h</span></div>
+          <div class="courserow"><span class="dot" style="background:var(--amber)"></span>SC2006 Software Eng<span class="val">5.1h</span></div>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 5: WEEKLY NOTES & JOURNAL (RESTORED IN FULL)          -->
+      <!-- ========================================================== -->
+      <div id="view-notes" class="scroll" style="display:none;">
+        <div class="wkhdr">
+          <div>
+            <div class="page-title">This Week</div>
+            <div class="date">Oct 19 – 25 <span style="opacity:.72">&middot; <span id="notesGoalCount">2</span>/5 done</span></div>
+          </div>
+          <div class="navbtns">
+            <div class="wkbtn"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></div>
+            <div class="wkbtn"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+          </div>
+        </div>
+
+        <div class="sechead" style="margin:12px 2px 2px"><div class="t">Weekly Goals</div>
+          <div class="badge" style="color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);" id="notesGoalBadge">2 / 5</div></div>
+
+        <div class="card" style="margin-top:8px;padding:14px 16px;">
+          <div class="progwrap"><div class="prog"><i id="notesProgressBar" style="width:40%"></i></div></div>
+
+          <div class="goalrow done" onclick="toggleWeeklyGoal(this)">
+            <div class="gcheck on"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+            <span class="gt">Finish SC2008 assignment 2</span>
+            <button class="gdel" onclick="event.stopPropagation();this.closest('.goalrow').remove();"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+          </div>
+          <div class="goalrow done" onclick="toggleWeeklyGoal(this)">
+            <div class="gcheck on"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+            <span class="gt">Read chapter 6 before Thursday</span>
+            <button class="gdel" onclick="event.stopPropagation();this.closest('.goalrow').remove();"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+          </div>
+          <div class="goalrow" onclick="toggleWeeklyGoal(this)">
+            <div class="gcheck"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+            <span class="gt">Three SC2008 sessions before Friday</span>
+            <button class="gdel" onclick="event.stopPropagation();this.closest('.goalrow').remove();"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+          </div>
+          <div class="goalrow" onclick="toggleWeeklyGoal(this)">
+            <div class="gcheck"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+            <span class="gt">Reply to the project supervisor</span>
+            <button class="gdel" onclick="event.stopPropagation();this.closest('.goalrow').remove();"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+          </div>
+
+          <div class="carry">Bring 2 open goals from last week</div>
+
+          <div class="addgoal">
+            <div class="field">Add a goal for this week&hellip;</div>
+            <div class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+          </div>
+        </div>
+
+        <div class="sechead" style="margin:12px 2px 2px"><div class="t">Notes</div>
+          <div class="badge">2 NOTES</div></div>
+
+        <div class="notecard">
+          <div class="nb">Assignment 2 needs the circuit diagram redone — the topology numbering was wrong. Start with the packet tracer file.</div>
+          <div class="nf">TODAY &middot; 2:14 PM <i></i></div>
+        </div>
+        <div class="notecard">
+          <div class="nb">Week went sideways after Wednesday. Two sessions only — move the OOP backlog into next week.</div>
+          <div class="nf">YESTERDAY &middot; 9:41 PM <i></i></div>
+        </div>
+        <div class="register" style="margin-top:10px;">+&nbsp;&nbsp;New note</div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 6: OPTICAL BARCODE / QR SCANNER (RESTORED IN FULL)    -->
+      <!-- ========================================================== -->
+      <div id="view-qr" class="scanner" style="display:none;">
+        <div class="sbar">
+          <div>
+            <h3>Scan a key</h3>
+            <p>Barcode, QR, EAN or Code128</p>
+          </div>
+          <div class="sclose" onclick="closeScannerView()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+        </div>
+
+        <div class="dead">
+          <div class="feed"></div>
+          <div class="shade"></div>
+          <div class="viwe">
+            <i class="c c1"></i><i class="c c2"></i><i class="c c3"></i><i class="c c4"></i>
+            <div class="laser"></div>
+          </div>
+        </div>
+
+        <div class="sfoot">
+          <div class="hint">Point camera at barcode on your bottle, notebook or card</div>
+          <div style="display:flex;gap:8px;">
+            <div class="ghost2"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Torch off</div>
+            <div class="ghost2" style="background:var(--accent);color:#fff;" onclick="simulateVerified('Barcode Key: Desk Bottle')">Simulate Verified ✓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 7: CONTACTLESS NFC TAG TAP (RESTORED IN FULL)         -->
+      <!-- ========================================================== -->
+      <div id="view-nfc" class="scanner" style="display:none;background:linear-gradient(180deg,#08110E 0%,#070C12 46%,#05080F 100%);">
+        <div class="sbar">
+          <div>
+            <h3>Tap your card</h3>
+            <p>Reading raw tag UID</p>
+          </div>
+          <div class="sclose" onclick="closeScannerView()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+        </div>
+
+        <div class="dead">
+          <div class="feed" style="opacity:.45"></div>
+          <div class="shade" style="background:linear-gradient(180deg,rgba(5,8,15,.62),rgba(5,8,15,.9))"></div>
+          <div class="radar">
+            <i class="ring"></i><i class="ring"></i><i class="ring"></i>
+            <div class="core"><svg viewBox="0 0 24 24"><path d="M8.5 9.5a4 4 0 0 1 0 5M15.5 9.5a4 4 0 0 0 0 5"/><circle cx="12" cy="12" r="2.4"/></svg></div>
+          </div>
+        </div>
+
+        <div class="nfcbody">
+          <h3>Hold the card against the back of your phone</h3>
+          <p>Student cards, transit cards and contactless payment cards all work &mdash; LockIn only reads the hardware UID, never the balance or contents.</p>
+          <div class="ready"><i></i>READER READY</div>
+          <div class="ghost2" style="margin-top:14px;background:var(--mint);color:#0B1526;font-weight:700;" onclick="simulateVerified('NFC Tag: Student ID (04:52:8A:1C)')">Simulate Tap Verified ✓</div>
+        </div>
+      </div>
+
+      <!-- Floating Bottom Navigation Bar (4 Destinations) -->
+      <div class="nav" id="bottomNav">
+        <div class="item on" id="nav-hub" onclick="switchScreen('hub')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Focus Hub
+        </div>
+        <div class="item" id="nav-vault" onclick="switchScreen('vault')">
+          <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Vault
+        </div>
+        <div class="item" id="nav-notes" onclick="switchScreen('notes')">
+          <svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Notes
+        </div>
+        <div class="item" id="nav-analytics" onclick="switchScreen('analytics')">
+          <svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Analytics
+        </div>
       </div>
 
       <!-- S24 Ultra Android Bottom Gesture Bar -->
-      <div class="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 rounded-full bg-black/40 dark:bg-white/40 z-40"></div>
+      <div class="gesture-bar"></div>
 
     </div>
   </div>
 
   <!-- Registration Choice Modal -->
-  <div id="choice-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-5">
-    <div class="card-glass p-5 w-full max-w-xs space-y-3 text-center shadow-2xl">
-      <h3 class="text-sm font-bold" style="color:var(--ink);">Register New Unlock Key</h3>
-      <p class="text-xs" style="color:var(--ink2);">Select hardware key engine:</p>
-      <div class="flex flex-col gap-2 pt-1">
-        <button onclick="closeChoiceModal(); goTo('scanner-qr');" class="py-2.5 px-3 rounded-xl text-xs font-bold bg-[var(--btn)] text-[var(--on-btn)] flex items-center justify-center gap-2">
-          <span>📷</span> Optical Barcode / QR
-        </button>
-        <button onclick="closeChoiceModal(); goTo('scanner-nfc');" class="py-2.5 px-3 rounded-xl text-xs font-bold bg-cyan-600 text-white flex items-center justify-center gap-2">
-          <span>💳</span> Contactless NFC Tag
-        </button>
-        <button onclick="closeChoiceModal()" class="py-1 text-xs font-semibold" style="color:var(--ink3);">Cancel</button>
+  <div id="choiceModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:60;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--card);border-radius:24px;padding:20px;max-width:320px;width:100%;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.5);border:1px solid var(--hair2);">
+      <h3 style="margin:0 0 6px;font-size:16px;font-weight:700;color:var(--ink);">Register New Unlock Key</h3>
+      <p style="margin:0 0 16px;font-size:11.5px;color:var(--ink2);">Select hardware unlock sensor:</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button onclick="closeChoiceModal();switchScreen('qr');" style="border:0;background:var(--btn);color:var(--on-btn);padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;">📷 Optical Barcode / QR</button>
+        <button onclick="closeChoiceModal();switchScreen('nfc');" style="border:0;background:var(--mint);color:#0B1526;padding:11px;border-radius:12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;">💳 Contactless NFC Tag</button>
+        <button onclick="closeChoiceModal()" style="border:0;background:transparent;color:var(--ink3);padding:6px;font:inherit;font-size:11px;cursor:pointer;">Cancel</button>
       </div>
     </div>
   </div>
 
-  <script>
-    let currentMode = 'light';
-    let currentAccent = 'blue';
+<script>
+  let currentScreen = 'hub';
+  let previousScreen = 'hub';
+  const allScreenIds = ['hub', 'active', 'vault', 'analytics', 'notes', 'qr', 'nfc'];
 
-    function toggleTheme() {
-      currentMode = currentMode === 'light' ? 'dark' : 'light';
-      document.body.dataset.mode = currentMode;
-      document.getElementById('theme-icon').textContent = currentMode === 'light' ? '☀️' : '🌙';
-      document.getElementById('theme-label').textContent = currentMode === 'light' ? 'Light' : 'Dark';
+  function switchScreen(target) {
+    if (!target.includes('qr') && !target.includes('nfc')) {
+      previousScreen = target;
     }
 
-    function setAccent(color) {
-      currentAccent = color;
-      document.body.dataset.accent = color;
-      ['blue', 'green', 'red'].forEach(c => {
-        const btn = document.getElementById(`acc-${c}`);
-        if (btn) btn.className = `w-4 h-4 rounded-full bg-[${c==='blue'?'#3E6DF3':c==='green'?'#2E9E77':'#DC4B52'}] ${c===color?'ring-2 ring-white':'ring-0'}`;
-      });
-    }
+    allScreenIds.forEach(id => {
+      const el = document.getElementById(`view-${id}`);
+      const tabBtn = document.getElementById(`tab-${id}`);
+      const navItem = document.getElementById(`nav-${id}`);
 
-    const allScreens = ['hub', 'active', 'vault', 'scanner-qr', 'scanner-nfc', 'notes', 'analytics', 'settings'];
-    function goTo(target) {
-      allScreens.forEach(name => {
-        const pane = document.getElementById(`view-${name}`);
-        const navBtn = document.getElementById(`nav-${name}`);
-        const topBtn = document.getElementById(`top-${name}`);
-
-        if (name === target) {
-          pane?.classList.remove('hidden');
-          if (topBtn) {
-            topBtn.classList.remove('text-white/70');
-            topBtn.classList.add('bg-white', 'text-[#0B0F19]', 'font-bold');
-          }
-          if (navBtn) {
-            navBtn.className = "flex flex-col items-center gap-0.5 text-[9px] font-semibold text-[var(--accent)] spring-btn";
-          }
-        } else {
-          pane?.classList.add('hidden');
-          if (topBtn && !topBtn.id.includes('scanner')) {
-            topBtn.classList.remove('bg-white', 'text-[#0B0F19]', 'font-bold');
-            topBtn.classList.add('text-white/70');
-          }
-          if (navBtn) {
-            navBtn.className = "flex flex-col items-center gap-0.5 text-[9px] font-medium opacity-60 hover:opacity-100 spring-btn";
-          }
-        }
-      });
-
-      const bottomNav = document.getElementById('bottom-nav');
-      if (target.startsWith('scanner')) {
-        bottomNav.classList.add('opacity-0', 'pointer-events-none');
+      if (id === target) {
+        if (el) el.style.display = 'flex';
+        if (tabBtn) tabBtn.classList.add('on');
+        if (navItem) navItem.classList.add('on');
       } else {
-        bottomNav.classList.remove('opacity-0', 'pointer-events-none');
+        if (el) el.style.display = 'none';
+        if (tabBtn) tabBtn.classList.remove('on');
+        if (navItem) navItem.classList.remove('on');
       }
+    });
 
-      document.getElementById('scroll-container').scrollTop = 0;
+    const bottomNav = document.getElementById('bottomNav');
+    if (target === 'qr' || target === 'nfc') {
+      bottomNav.style.display = 'none';
+    } else {
+      bottomNav.style.display = 'flex';
     }
+  }
 
-    function openRegisterChoiceModal() {
-      document.getElementById('choice-modal').classList.remove('hidden');
-    }
-    function closeChoiceModal() {
-      document.getElementById('choice-modal').classList.add('hidden');
-    }
+  function closeScannerView() {
+    switchScreen(previousScreen || 'hub');
+  }
 
-    let timerInterval = null;
-    let secondsRemaining = 42 * 60 + 18;
-    let isPaused = false;
+  function openChoiceModal() {
+    document.getElementById('choiceModal').style.display = 'flex';
+  }
+  function closeChoiceModal() {
+    document.getElementById('choiceModal').style.display = 'none';
+  }
 
-    function formatTime(secs) {
-      const m = Math.floor(secs / 60);
-      const s = secs % 60;
-      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
+  function simulateVerified(keyName) {
+    alert(`Success!\n\n${keyName}\n\nSession verified and unlocked.`);
+    switchScreen('hub');
+  }
 
-    function startSession() {
-      goTo('active');
-      isPaused = false;
-      document.getElementById('pause-text').textContent = 'Pause';
-      document.getElementById('pause-icon').textContent = '⏸';
-      
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        if (!isPaused && secondsRemaining > 0) {
-          secondsRemaining--;
-          document.getElementById('active-timer-text').textContent = formatTime(secondsRemaining);
-          const offset = Math.max(0, 640 - (secondsRemaining / (50 * 60)) * 640);
-          document.getElementById('active-ring-inner').setAttribute('stroke-dashoffset', offset);
+  // Working Live Timer
+  let timerInterval = null;
+  let remainingSeconds = 42 * 60 + 18;
+  let isTimerPaused = false;
+
+  function formatClock(secs) {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function startTimerSession() {
+    switchScreen('active');
+    isTimerPaused = false;
+    document.getElementById('pauseLabel').textContent = 'Pause';
+    
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      if (!isTimerPaused && remainingSeconds > 0) {
+        remainingSeconds--;
+        document.getElementById('countdownTime').textContent = formatClock(remainingSeconds);
+        const arc = document.getElementById('timerProgressArc');
+        if (arc) {
+          const frac = Math.max(0, remainingSeconds / (50 * 60));
+          arc.setAttribute('stroke-dasharray', `${Math.round(frac * 100)} 100`);
         }
-      }, 1000);
-    }
-
-    function togglePause() {
-      isPaused = !isPaused;
-      document.getElementById('pause-text').textContent = isPaused ? 'Resume' : 'Pause';
-      document.getElementById('pause-icon').textContent = isPaused ? '▶' : '⏸';
-    }
-
-    function confirmStop() {
-      if (confirm('Stop Session? Ending early will cancel your current study timer.')) {
-        clearInterval(timerInterval);
-        secondsRemaining = 50 * 60;
-        goTo('hub');
       }
-    }
+    }, 1000);
+  }
 
-    function simulateSuccess(msg) {
-      alert(`Key Verified!\n\n${msg}\n\nSession unlocked successfully.`);
+  function togglePause() {
+    isTimerPaused = !isTimerPaused;
+    document.getElementById('pauseLabel').textContent = isTimerPaused ? 'Resume' : 'Pause';
+  }
+
+  function confirmStopTimer() {
+    if (confirm('Stop Session? Ending early will cancel your study streak progress.')) {
       clearInterval(timerInterval);
-      goTo('hub');
+      remainingSeconds = 50 * 60;
+      switchScreen('hub');
+    }
+  }
+
+  // Weekly Goals Interactive Checkbox
+  let goalsCompleted = 2;
+  function toggleWeeklyGoal(row) {
+    const check = row.querySelector('.gcheck');
+    const isDone = row.classList.contains('done');
+
+    if (isDone) {
+      row.classList.remove('done');
+      check.classList.remove('on');
+      goalsCompleted--;
+    } else {
+      row.classList.add('done');
+      check.classList.add('on');
+      goalsCompleted++;
     }
 
-    function setDuration(mins, btn) {
-      document.querySelectorAll('.dur-btn').forEach(b => {
-        b.className = "dur-btn px-2.5 py-1 rounded-full text-[11px] font-medium bg-black/5 dark:bg-white/5";
-      });
-      btn.className = "dur-btn px-2.5 py-1 rounded-full text-[11px] font-bold bg-[var(--btn)] text-[var(--on-btn)]";
-      secondsRemaining = mins * 60;
-    }
+    document.getElementById('notesGoalCount').textContent = goalsCompleted;
+    document.getElementById('notesGoalBadge').textContent = `${goalsCompleted} / 5`;
+    document.getElementById('notesProgressBar').style.width = `${(goalsCompleted / 5) * 100}%`;
+  }
 
-    function setLockMode(mode, btn) {
-      document.querySelectorAll('.lock-chip').forEach(b => {
-        b.className = "lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-black/5 dark:bg-white/5";
-      });
-      btn.className = "lock-chip px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[var(--btn)] text-[var(--on-btn)]";
-    }
+  // Theme & Accent controls
+  const modeBtn = document.getElementById('modeBtn');
+  const accentSeg = document.getElementById('accentSeg');
+  const body = document.body;
 
-    function selectModule(code, btn) {
-      document.querySelectorAll('.mod-chip').forEach(b => {
-        b.className = "mod-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white/25 text-white flex items-center gap-1.5 whitespace-nowrap";
-      });
-      btn.className = "mod-chip px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--btn)] text-[var(--on-btn)] flex items-center gap-1.5 shadow-xs whitespace-nowrap";
-      document.getElementById('focus-title').textContent = code === 'SC2008' ? 'Computer Networks' : code === 'SC2002' ? 'Object-Oriented Programming' : 'Software Engineering';
-    }
+  function toggleMode() {
+    const next = body.dataset.mode === 'light' ? 'dark' : 'light';
+    body.dataset.mode = next;
+    modeBtn.textContent = next === 'light' ? '☀️ Light' : '🌙 Dark';
+  }
 
-    function toggleGoal(row) {
-      const box = row.firstElementChild;
-      const text = row.lastElementChild;
-      const isDone = text.classList.contains('line-through');
-      if (isDone) {
-        text.classList.remove('line-through');
-        text.style.color = "var(--ink)";
-        box.style.background = "transparent";
-        box.classList.add('border', 'border-black/25', 'dark:border-white/25');
-        box.textContent = "";
-      } else {
-        text.classList.add('line-through');
-        text.style.color = "var(--ink3)";
-        box.style.background = "var(--accent)";
-        box.classList.remove('border', 'border-black/25', 'dark:border-white/25');
-        box.textContent = "✓";
-      }
-    }
+  accentSeg.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-accent]');
+    if (!btn) return;
+    body.dataset.accent = btn.dataset.accent;
+    [...accentSeg.children].forEach(b => b.classList.toggle('on', b === btn));
+  });
 
-    function updateClock() {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, '0');
-      const m = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('live-clock').textContent = `${h}:${m}`;
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-  </script>
+  // Clock
+  function updateLiveClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('liveClock').textContent = `${h}:${m}`;
+  }
+  setInterval(updateLiveClock, 1000);
+  updateLiveClock();
+</script>
 </body>
 </html>
