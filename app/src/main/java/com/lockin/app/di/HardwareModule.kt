@@ -6,6 +6,8 @@ import androidx.core.content.getSystemService
 import com.lockin.app.hardware.flip.FlipDetector
 import com.lockin.app.hardware.haptics.HapticFeedbackHelper
 import com.lockin.app.hardware.nfc.NfcCardReader
+import com.lockin.app.hardware.wifi.WifiZoneDetector
+import com.lockin.app.service.DistractionGuard
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,5 +38,15 @@ object HardwareModule {
     @Singleton
     fun provideNfcCardReader(@ApplicationContext context: Context): NfcCardReader =
         NfcCardReader(context)
+
+    @Provides
+    @Singleton
+    fun provideWifiZoneDetector(@ApplicationContext context: Context): WifiZoneDetector =
+        WifiZoneDetector(context)
+
+    @Provides
+    @Singleton
+    fun provideDistractionGuard(@ApplicationContext context: Context): DistractionGuard =
+        DistractionGuard(context)
 }
 

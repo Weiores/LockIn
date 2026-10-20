@@ -13,6 +13,8 @@ import com.lockin.app.domain.repository.PreferencesRepository
 import com.lockin.app.domain.repository.SessionRepository
 import com.lockin.app.domain.repository.TriggerRepository
 import com.lockin.app.domain.usecase.StartSessionUseCase
+import com.lockin.app.hardware.wifi.WifiZoneDetector
+import com.lockin.app.hardware.wifi.WifiZoneInfo
 import com.lockin.app.service.TimerEngine
 import com.lockin.app.service.TimerForegroundService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -34,6 +37,7 @@ class FocusHubViewModel @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
     private val startSessionUseCase: StartSessionUseCase,
     private val timerEngine: TimerEngine,
+    private val wifiZoneDetector: WifiZoneDetector,
 ) : ViewModel() {
 
     val timerState: StateFlow<TimerState> = timerEngine.timerState
@@ -46,6 +50,17 @@ class FocusHubViewModel @Inject constructor(
 
     val savedTriggers: StateFlow<List<TriggerProfile>> = triggerRepository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val currentWifi: StateFlow<WifiZoneInfo> = wifiZoneDetector.observeCurrentWifi()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WifiZoneInfo(isConnected = false))
+
+    val activeStudyZone: StateFlow<TriggerProfile?> = combine(
+        currentWifi,
+        savedTriggers,
+    ) { wifi, triggers ->
+        val wifiZones = triggers.filter { it.type == TriggerType.WIFI }
+        wifiZoneDetector.findMatchingZone(wifi, wifiZones)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _selectedModule = MutableStateFlow<CourseModule?>(null)
     val selectedModule: StateFlow<CourseModule?> = _selectedModule.asStateFlow()

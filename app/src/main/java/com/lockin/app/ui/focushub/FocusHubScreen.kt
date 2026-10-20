@@ -90,6 +90,8 @@ fun FocusHubScreen(
     val selectedTriggerType by viewModel.selectedTriggerType.collectAsState()
     val selectedTriggerProfile by viewModel.selectedTriggerProfile.collectAsState()
     val savedTriggers by viewModel.savedTriggers.collectAsState()
+    val activeStudyZone by viewModel.activeStudyZone.collectAsState()
+    val currentWifi by viewModel.currentWifi.collectAsState()
     val streakDays by viewModel.streakDays.collectAsState()
 
     val isSessionActive = timerState is TimerState.ActiveLocked ||
@@ -167,11 +169,23 @@ fun FocusHubScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     // Wi-Fi status pill
+                    val wifiText = when {
+                        activeStudyZone != null -> activeStudyZone!!.label
+                        currentWifi.isConnected && !currentWifi.ssid.isNullOrBlank() -> currentWifi.ssid!!
+                        currentWifi.isConnected -> "Wi-Fi Active"
+                        else -> "Offline"
+                    }
+                    val isZoneActive = activeStudyZone != null
+
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(
-                                if (isDark) Color.White.copy(alpha = 0.07f) else Color.Black.copy(alpha = 0.04f),
+                                if (isZoneActive) {
+                                    AppleGreen.copy(alpha = if (isDark) 0.18f else 0.10f)
+                                } else {
+                                    if (isDark) Color.White.copy(alpha = 0.07f) else Color.Black.copy(alpha = 0.04f)
+                                },
                             )
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -180,14 +194,15 @@ fun FocusHubScreen(
                         Icon(
                             imageVector = Icons.Filled.Wifi,
                             contentDescription = "Wi-Fi",
-                            tint = AppleGreen,
+                            tint = if (currentWifi.isConnected) AppleGreen else Color.Gray,
                             modifier = Modifier.size(13.dp),
                         )
                         Text(
-                            text = "Ready",
+                            text = wifiText,
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (isZoneActive) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isZoneActive) AppleGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                         )
                     }
 

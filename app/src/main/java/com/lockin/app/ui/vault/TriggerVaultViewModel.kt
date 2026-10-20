@@ -87,3 +87,4 @@ class TriggerVaultViewModel @Inject constructor(
         hapticFeedbackHelper.performLockSuccessHaptic()
     }
 }
+

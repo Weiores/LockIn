@@ -213,6 +213,53 @@ class TimerNotificationHelper @Inject constructor(
         notificationManager.notify(Constants.TIMER_NOTIFICATION_ID, notification)
     }
 
+    fun showDistractionWarningNotification(appName: String, moduleCode: String?) {
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val target = if (moduleCode != null) "for $moduleCode" else "deep work"
+        val notification = NotificationCompat.Builder(context, Constants.GENERAL_NOTIFICATION_CHANNEL_ID)
+            .setContentTitle("⚠️ Step Away From $appName!")
+            .setContentText("Your session $target is still active. Return to work!")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(contentIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVibrate(longArrayOf(0, 200, 100, 200))
+            .build()
+
+        notificationManager.notify(Constants.GRACE_NOTIFICATION_ID, notification)
+    }
+
+    fun showWifiStudyZonePromptNotification(zoneLabel: String) {
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val notification = NotificationCompat.Builder(context, Constants.GENERAL_NOTIFICATION_CHANNEL_ID)
+            .setContentTitle("📍 Arrived at $zoneLabel")
+            .setContentText("Ready to lock in? Tap to start a deep work session.")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(contentIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        notificationManager.notify(Constants.WIFI_PROMPT_NOTIFICATION_ID, notification)
+    }
+
     fun cancelTimerNotification() {
         notificationManager.cancel(Constants.TIMER_NOTIFICATION_ID)
     }

@@ -39,6 +39,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.lockin.app.ui.focushub.FocusHubScreen
+import com.lockin.app.ui.settings.SettingsScreen
 import com.lockin.app.ui.timer.ActiveSessionOverlay
 import com.lockin.app.ui.vault.TriggerVaultScreen
 
@@ -143,7 +144,7 @@ fun LockInNavGraph() {
                 PlaceholderScreen(title = "Analytics")
             }
             composable<Screen.Settings> {
-                PlaceholderScreen(title = "Settings")
+                SettingsScreen()
             }
         }
     }

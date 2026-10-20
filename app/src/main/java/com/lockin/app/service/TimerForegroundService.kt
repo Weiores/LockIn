@@ -28,8 +28,18 @@ class TimerForegroundService : Service() {
     @Inject
     lateinit var notificationHelper: TimerNotificationHelper
 
+    @Inject
+    lateinit var distractionGuard: DistractionGuard
+
+    @Inject
+    lateinit var preferencesRepository: PreferencesRepository
+
+    @Inject
+    lateinit var hapticHelper: HapticFeedbackHelper
+
     private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
     private var stateObserverJob: Job? = null
+    private var distractionObserverJob: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
 
     companion object {
@@ -163,6 +173,10 @@ class TimerForegroundService : Service() {
                         notificationManager.notify(Constants.TIMER_NOTIFICATION_ID, notification)
                     }
                     is TimerState.ActiveLocked -> {
+                        if (distractionObserverJob == null || distractionObserverJob?.isActive == false) {
+                            startDistractionMonitoring(moduleCode)
+                        }
+
                         val currentRemainingSec = state.remainingMs / 1000
                         // Throttle notification updates to once per 5 seconds or when paused to save system resources
                         if (state.isPaused || Math.abs(currentRemainingSec - lastNotificationUpdateSec) >= 5) {
@@ -195,6 +209,39 @@ class TimerForegroundService : Service() {
         }
     }
 
+    private fun startDistractionMonitoring(moduleCode: String?) {
+        distractionObserverJob?.cancel()
+        distractionObserverJob = serviceScope.launch {
+            var lastAlertEpochMs = 0L
+
+            preferencesRepository.blacklistedPackages.collect { blacklist ->
+                distractionGuard.observeForegroundApp(1500L).collect { fgPackage ->
+                    if (fgPackage != null && fgPackage != packageName && blacklist.contains(fgPackage)) {
+                        val now = System.currentTimeMillis()
+                        // Alert at most once every 6 seconds to avoid notification flapping
+                        if (now - lastAlertEpochMs > 6000L) {
+                            lastAlertEpochMs = now
+                            timerEngine.incrementBreakCount()
+                            hapticHelper.startGracePeriodWarningHaptic()
+
+                            val friendlyName = when {
+                                fgPackage.contains("instagram") -> "Instagram"
+                                fgPackage.contains("tiktok") || fgPackage.contains("musically") -> "TikTok"
+                                fgPackage.contains("twitter") || fgPackage.contains("x") -> "X (Twitter)"
+                                fgPackage.contains("reddit") -> "Reddit"
+                                fgPackage.contains("youtube") -> "YouTube"
+                                fgPackage.contains("snapchat") -> "Snapchat"
+                                fgPackage.contains("facebook") -> "Facebook"
+                                else -> "Social Media"
+                            }
+                            notificationHelper.showDistractionWarningNotification(friendlyName, moduleCode)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun handleStop() {
         timerEngine.stopTimer()
         cleanUpAndStop()
@@ -202,6 +249,8 @@ class TimerForegroundService : Service() {
 
     private fun cleanUpAndStop() {
         stateObserverJob?.cancel()
+        distractionObserverJob?.cancel()
+        distractionObserverJob = null
         wakeLock?.let {
             if (it.isHeld) it.release()
         }
