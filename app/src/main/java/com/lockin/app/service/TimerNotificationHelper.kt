@@ -102,6 +102,88 @@ class TimerNotificationHelper @Inject constructor(
             .build()
     }
 
+    fun buildArmingNotification(
+        triggerType: com.lockin.app.domain.model.TriggerType,
+        moduleCode: String? = null,
+    ): Notification {
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val stopIntent = PendingIntent.getService(
+            context,
+            1,
+            Intent(context, TimerForegroundService::class.java).apply {
+                action = TimerForegroundService.ACTION_STOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val title = if (moduleCode != null) "LockIn • $moduleCode" else "LockIn • Deep Work"
+        val statusText = when (triggerType) {
+            com.lockin.app.domain.model.TriggerType.FLIP -> "Place phone face-down to start session"
+            com.lockin.app.domain.model.TriggerType.BARCODE -> "Scan barcode to start session"
+            com.lockin.app.domain.model.TriggerType.NFC -> "Tap ID card to start session"
+            else -> "Ready to lock in"
+        }
+
+        return NotificationCompat.Builder(context, Constants.TIMER_NOTIFICATION_CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(statusText)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(contentIntent)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .addAction(0, "Cancel", stopIntent)
+            .build()
+    }
+
+    fun buildGraceNotification(
+        graceRemainingSec: Long,
+        moduleCode: String? = null,
+    ): Notification {
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val stopIntent = PendingIntent.getService(
+            context,
+            1,
+            Intent(context, TimerForegroundService::class.java).apply {
+                action = TimerForegroundService.ACTION_STOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val title = "⚠️ PHONE LIFTED! Return face-down"
+        val statusText = "Session breaks in ${graceRemainingSec}s! Place phone face-down."
+
+        return NotificationCompat.Builder(context, Constants.GENERAL_NOTIFICATION_CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(statusText)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(contentIntent)
+            .setOngoing(true)
+            .setOnlyAlertOnce(false)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .addAction(0, "Give Up", stopIntent)
+            .build()
+    }
+
     fun showCompletionNotification(moduleCode: String?) {
         val contentIntent = PendingIntent.getActivity(
             context,

@@ -116,12 +116,16 @@ class TimerForegroundService : Service() {
         wakeLock?.acquire(durationMs + 60_000L)
 
         // Post initial notification immediately for foreground service contract
-        val initialNotification = notificationHelper.buildTimerNotification(
-            remainingMs = durationMs,
-            totalMs = durationMs,
-            isPaused = false,
-            moduleCode = moduleCode,
-        )
+        val initialNotification = if (triggerType == TriggerType.FLIP) {
+            notificationHelper.buildArmingNotification(triggerType, moduleCode)
+        } else {
+            notificationHelper.buildTimerNotification(
+                remainingMs = durationMs,
+                totalMs = durationMs,
+                isPaused = false,
+                moduleCode = moduleCode,
+            )
+        }
 
         ServiceCompat.startForeground(
             this,
@@ -142,9 +146,17 @@ class TimerForegroundService : Service() {
         stateObserverJob?.cancel()
         stateObserverJob = serviceScope.launch {
             var lastNotificationUpdateSec = 0L
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
 
             timerEngine.timerState.collect { state ->
                 when (state) {
+                    is TimerState.ArmingTrigger -> {
+                        val notification = notificationHelper.buildArmingNotification(
+                            triggerType = state.triggerType,
+                            moduleCode = moduleCode,
+                        )
+                        notificationManager.notify(Constants.TIMER_NOTIFICATION_ID, notification)
+                    }
                     is TimerState.ActiveLocked -> {
                         val currentRemainingSec = state.remainingMs / 1000
                         // Throttle notification updates to once per 5 seconds or when paused to save system resources
@@ -156,18 +168,22 @@ class TimerForegroundService : Service() {
                                 isPaused = state.isPaused,
                                 moduleCode = moduleCode,
                             )
-                            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
                             notificationManager.notify(Constants.TIMER_NOTIFICATION_ID, notification)
                         }
+                    }
+                    is TimerState.GracePeriodWarning -> {
+                        val graceSec = (state.graceRemainingMs / 1000).coerceAtLeast(0L)
+                        val notification = notificationHelper.buildGraceNotification(
+                            graceRemainingSec = graceSec,
+                            moduleCode = moduleCode,
+                        )
+                        notificationManager.notify(Constants.TIMER_NOTIFICATION_ID, notification)
                     }
                     is TimerState.Completed, is TimerState.Failed -> {
                         cleanUpAndStop()
                     }
                     TimerState.Idle -> {
                         cleanUpAndStop()
-                    }
-                    is TimerState.GracePeriodWarning, is TimerState.ArmingTrigger -> {
-                        // Will be expanded in Phase 3
                     }
                 }
             }

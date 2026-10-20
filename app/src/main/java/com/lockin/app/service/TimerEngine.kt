@@ -9,6 +9,8 @@ import com.lockin.app.domain.model.SessionOutcome
 import com.lockin.app.domain.model.TimerState
 import com.lockin.app.domain.model.TriggerType
 import com.lockin.app.domain.usecase.EndSessionUseCase
+import com.lockin.app.hardware.flip.FlipDetector
+import com.lockin.app.hardware.haptics.HapticFeedbackHelper
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,9 +29,13 @@ class TimerEngine @Inject constructor(
     @ApplicationContext private val context: Context,
     private val endSessionUseCase: EndSessionUseCase,
     private val notificationHelper: TimerNotificationHelper,
+    private val flipDetector: FlipDetector,
+    private val hapticHelper: HapticFeedbackHelper,
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + Job())
     private var tickerJob: Job? = null
+    private var flipJob: Job? = null
+    private var graceJob: Job? = null
 
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
@@ -39,6 +45,7 @@ class TimerEngine @Inject constructor(
     private var currentSessionId: Long = -1L
     private var targetEpochMs: Long = 0L
     private var totalDurationMs: Long = 0L
+    private var sessionRemainingBeforeGraceMs: Long = 0L
     private var currentTriggerType: TriggerType = TriggerType.MANUAL
     private var currentModuleCode: String? = null
     private var breakCount: Int = 0
@@ -54,29 +61,153 @@ class TimerEngine @Inject constructor(
         triggerType: TriggerType,
         moduleCode: String? = null,
     ) {
-        tickerJob?.cancel()
+        cancelAllJobs()
         cancelAlarm()
+        hapticHelper.cancelHaptics()
 
         currentSessionId = sessionId
         totalDurationMs = durationMs
-        targetEpochMs = System.currentTimeMillis() + durationMs
         currentTriggerType = triggerType
         currentModuleCode = moduleCode
         breakCount = 0
 
-        _timerState.value = TimerState.ActiveLocked(
-            sessionId = sessionId,
-            remainingMs = durationMs,
-            totalMs = durationMs,
-            triggerType = triggerType,
-            isPaused = false,
-        )
+        if (triggerType == TriggerType.FLIP) {
+            _timerState.value = TimerState.ArmingTrigger(
+                triggerType = TriggerType.FLIP,
+                moduleId = null,
+                plannedDurationMs = durationMs,
+            )
+            startFlipObserver()
+        } else {
+            targetEpochMs = System.currentTimeMillis() + durationMs
+            _timerState.value = TimerState.ActiveLocked(
+                sessionId = sessionId,
+                remainingMs = durationMs,
+                totalMs = durationMs,
+                triggerType = triggerType,
+                isPaused = false,
+            )
+            scheduleAlarm(targetEpochMs)
+            startTicker()
+        }
+    }
 
-        scheduleAlarm(targetEpochMs)
-        startTicker()
+    private fun startFlipObserver() {
+        flipJob?.cancel()
+        flipJob = scope.launch {
+            flipDetector.observeFlipState().collect { flipState ->
+                val currentState = _timerState.value
+                when (flipState) {
+                    is FlipDetector.FlipState.FaceDown -> {
+                        when (currentState) {
+                            is TimerState.ArmingTrigger -> {
+                                // Locked in! Phone placed face-down
+                                hapticHelper.performLockSuccessHaptic()
+                                targetEpochMs = System.currentTimeMillis() + totalDurationMs
+                                _timerState.value = TimerState.ActiveLocked(
+                                    sessionId = currentSessionId,
+                                    remainingMs = totalDurationMs,
+                                    totalMs = totalDurationMs,
+                                    triggerType = currentTriggerType,
+                                    isPaused = false,
+                                )
+                                scheduleAlarm(targetEpochMs)
+                                startTicker()
+                            }
+                            is TimerState.GracePeriodWarning -> {
+                                // Streak restored! Phone placed back face-down in time
+                                graceJob?.cancel()
+                                graceJob = null
+                                hapticHelper.cancelHaptics()
+                                hapticHelper.performLockSuccessHaptic()
+                                breakCount++
+
+                                targetEpochMs = System.currentTimeMillis() + sessionRemainingBeforeGraceMs
+                                _timerState.value = TimerState.ActiveLocked(
+                                    sessionId = currentSessionId,
+                                    remainingMs = sessionRemainingBeforeGraceMs,
+                                    totalMs = totalDurationMs,
+                                    triggerType = currentTriggerType,
+                                    isPaused = false,
+                                )
+                                scheduleAlarm(targetEpochMs)
+                                startTicker()
+                            }
+                            else -> Unit
+                        }
+                    }
+                    is FlipDetector.FlipState.FaceUp -> {
+                        if (currentState is TimerState.ActiveLocked && !currentState.isPaused) {
+                            // Phone lifted during active flip session!
+                            tickerJob?.cancel()
+                            cancelAlarm()
+
+                            val now = System.currentTimeMillis()
+                            val remaining = (targetEpochMs - now).coerceAtLeast(0L)
+                            sessionRemainingBeforeGraceMs = remaining
+
+                            val graceTotalMs = 10_000L
+                            _timerState.value = TimerState.GracePeriodWarning(
+                                sessionId = currentSessionId,
+                                graceRemainingMs = graceTotalMs,
+                                sessionRemainingMs = remaining,
+                                totalMs = totalDurationMs,
+                            )
+
+                            hapticHelper.startGracePeriodWarningHaptic()
+                            startGraceCountdown(graceTotalMs)
+                        }
+                    }
+                    FlipDetector.FlipState.Unknown -> Unit
+                }
+            }
+        }
+    }
+
+    private fun startGraceCountdown(totalGraceMs: Long) {
+        graceJob?.cancel()
+        graceJob = scope.launch {
+            val graceTarget = System.currentTimeMillis() + totalGraceMs
+            while (isActive) {
+                delay(200)
+                val now = System.currentTimeMillis()
+                val remainingGrace = graceTarget - now
+
+                if (remainingGrace <= 0) {
+                    // Grace period expired — break the session
+                    hapticHelper.cancelHaptics()
+                    cancelAllJobs()
+
+                    val actualDurationMs = (totalDurationMs - sessionRemainingBeforeGraceMs).coerceAtLeast(0L)
+                    val sessionId = currentSessionId
+
+                    _timerState.value = TimerState.Failed(
+                        sessionId = sessionId,
+                        actualDurationMs = actualDurationMs,
+                        reason = FailReason.GRACE_EXPIRED,
+                    )
+
+                    endSessionUseCase(
+                        sessionId = sessionId,
+                        outcome = SessionOutcome.FAILED,
+                        actualDurationMs = actualDurationMs,
+                        breakCount = breakCount,
+                    )
+                    break
+                } else {
+                    _timerState.value = TimerState.GracePeriodWarning(
+                        sessionId = currentSessionId,
+                        graceRemainingMs = remainingGrace,
+                        sessionRemainingMs = sessionRemainingBeforeGraceMs,
+                        totalMs = totalDurationMs,
+                    )
+                }
+            }
+        }
     }
 
     private fun startTicker() {
+        tickerJob?.cancel()
         tickerJob = scope.launch {
             while (isActive) {
                 delay(500)
@@ -124,16 +255,20 @@ class TimerEngine @Inject constructor(
     }
 
     fun stopTimer(reason: FailReason = FailReason.USER_CANCELLED) {
-        tickerJob?.cancel()
+        cancelAllJobs()
         cancelAlarm()
+        hapticHelper.cancelHaptics()
+
         val currentState = _timerState.value
-        val actualDurationMs = if (currentState is TimerState.ActiveLocked) {
-            totalDurationMs - currentState.remainingMs
-        } else {
-            0L
+        val actualDurationMs = when (currentState) {
+            is TimerState.ActiveLocked -> (totalDurationMs - currentState.remainingMs).coerceAtLeast(0L)
+            is TimerState.GracePeriodWarning -> (totalDurationMs - currentState.sessionRemainingMs).coerceAtLeast(0L)
+            else -> 0L
         }
 
         val sessionId = currentSessionId
+        val outcome = if (reason == FailReason.GRACE_EXPIRED) SessionOutcome.FAILED else SessionOutcome.CANCELLED
+
         _timerState.value = TimerState.Failed(
             sessionId = sessionId,
             actualDurationMs = actualDurationMs,
@@ -143,7 +278,7 @@ class TimerEngine @Inject constructor(
         scope.launch {
             endSessionUseCase(
                 sessionId = sessionId,
-                outcome = SessionOutcome.CANCELLED,
+                outcome = outcome,
                 actualDurationMs = actualDurationMs,
                 breakCount = breakCount,
             )
@@ -151,8 +286,11 @@ class TimerEngine @Inject constructor(
     }
 
     fun onTimerFinished() {
-        tickerJob?.cancel()
+        cancelAllJobs()
         cancelAlarm()
+        hapticHelper.cancelHaptics()
+        hapticHelper.performLockSuccessHaptic()
+
         val sessionId = currentSessionId
         val totalMs = totalDurationMs
         val module = currentModuleCode
@@ -179,10 +317,20 @@ class TimerEngine @Inject constructor(
     }
 
     fun resetToIdle() {
-        tickerJob?.cancel()
+        cancelAllJobs()
         cancelAlarm()
+        hapticHelper.cancelHaptics()
         _timerState.value = TimerState.Idle
         currentSessionId = -1L
+    }
+
+    private fun cancelAllJobs() {
+        tickerJob?.cancel()
+        tickerJob = null
+        graceJob?.cancel()
+        graceJob = null
+        flipJob?.cancel()
+        flipJob = null
     }
 
     private fun scheduleAlarm(triggerAtMillis: Long) {
@@ -204,7 +352,6 @@ class TimerEngine @Inject constructor(
                 pendingIntent,
             )
         } catch (e: SecurityException) {
-            // In case SCHEDULE_EXACT_ALARM is not granted, fallback to standard alarm
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 triggerAtMillis,
@@ -229,4 +376,3 @@ class TimerEngine @Inject constructor(
         }
     }
 }
-

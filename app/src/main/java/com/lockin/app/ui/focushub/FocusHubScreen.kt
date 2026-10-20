@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.lockin.app.domain.model.TimerState
+import com.lockin.app.domain.model.TriggerType
 import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.components.GlassCard
 import com.lockin.app.ui.components.TimerRingCanvas
@@ -82,11 +84,25 @@ fun FocusHubScreen(
     val modules by viewModel.modules.collectAsState()
     val selectedModule by viewModel.selectedModule.collectAsState()
     val selectedDurationMinutes by viewModel.selectedDurationMinutes.collectAsState()
+    val selectedTriggerType by viewModel.selectedTriggerType.collectAsState()
     val streakDays by viewModel.streakDays.collectAsState()
 
-    val isSessionActive = timerState is TimerState.ActiveLocked
-    val activeRemainingMs = (timerState as? TimerState.ActiveLocked)?.remainingMs
-    val activeTotalMs = (timerState as? TimerState.ActiveLocked)?.totalMs
+    val isSessionActive = timerState is TimerState.ActiveLocked ||
+            timerState is TimerState.ArmingTrigger ||
+            timerState is TimerState.GracePeriodWarning
+
+    val activeRemainingMs = when (val s = timerState) {
+        is TimerState.ActiveLocked -> s.remainingMs
+        is TimerState.GracePeriodWarning -> s.sessionRemainingMs
+        is TimerState.ArmingTrigger -> s.plannedDurationMs
+        else -> null
+    }
+    val activeTotalMs = when (val s = timerState) {
+        is TimerState.ActiveLocked -> s.totalMs
+        is TimerState.GracePeriodWarning -> s.totalMs
+        is TimerState.ArmingTrigger -> s.plannedDurationMs
+        else -> null
+    }
 
     val displayRemainingMs = activeRemainingMs ?: (selectedDurationMinutes * 60 * 1000L)
     val displayTotalMs = activeTotalMs ?: (selectedDurationMinutes * 60 * 1000L)
@@ -181,6 +197,73 @@ fun FocusHubScreen(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp),
                         )
+                    }
+                }
+            }
+        }
+
+        // --- Trigger Mode Selector (Manual vs Flip to Lock) ---
+        AnimatedVisibility(visible = !isSessionActive) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "LOCK-IN TRIGGER",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.1.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 2.dp),
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    val triggerModes = listOf(
+                        Triple(TriggerType.MANUAL, "Manual Timer", Icons.Filled.PlayArrow),
+                        Triple(TriggerType.FLIP, "Flip to Lock", Icons.Filled.ScreenRotation),
+                    )
+
+                    triggerModes.forEach { (type, label, icon) ->
+                        val isSelected = selectedTriggerType == type
+                        val chipBg by animateColorAsState(
+                            targetValue = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
+                            },
+                            animationSpec = spring(),
+                            label = "triggerChipBg",
+                        )
+                        val chipTextColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(chipBg)
+                                .clickable { viewModel.selectTriggerType(type) }
+                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = label,
+                                    tint = chipTextColor,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = chipTextColor,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -348,7 +431,11 @@ fun FocusHubScreen(
             label = "actionButtonsTransition",
         ) { active ->
             if (active) {
-                val activeSessionId = (timerState as? TimerState.ActiveLocked)?.sessionId ?: -1L
+                val activeSessionId = when (val s = timerState) {
+                    is TimerState.ActiveLocked -> s.sessionId
+                    is TimerState.GracePeriodWarning -> s.sessionId
+                    else -> 1L
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -434,14 +521,14 @@ fun FocusHubScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Lock,
+                            imageVector = if (selectedTriggerType == TriggerType.FLIP) Icons.Filled.ScreenRotation else Icons.Filled.Lock,
                             contentDescription = "Lock In",
                             tint = Color.White,
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Start & Lock In",
+                            text = if (selectedTriggerType == TriggerType.FLIP) "Arm Flip to Lock" else "Start & Lock In",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
