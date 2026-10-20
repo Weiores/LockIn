@@ -1,5 +1,8 @@
 package com.lockin.app.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -12,6 +15,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +25,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Icon
@@ -54,10 +60,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lockin.app.ui.theme.GlassRadius
 import com.lockin.app.ui.theme.GlassTokens
+import kotlin.math.roundToInt
 import com.lockin.app.ui.theme.GlassType
 import com.lockin.app.ui.theme.LockInPalette
 import kotlin.math.cos
@@ -641,8 +649,9 @@ enum class LockInTab(
 }
 
 /**
- * Floating frosted-glass pill bar. The active tab gets a cyan wash, a cyan rim
- * and a soft glow; everything else stays muted.
+ * Floating frosted-glass pill bar. The selection pill physically travels
+ * between tabs on a spring instead of snapping, and each item cross-fades its
+ * ink colour as it gains or loses selection.
  */
 @Composable
 fun LockInBottomNavBar(
@@ -653,13 +662,16 @@ fun LockInBottomNavBar(
     val barShape = RoundedCornerShape(30.dp)
     val ink = LockInPalette.InkButton
     val onInk = LockInPalette.OnInkButton
+    val tabs = LockInTab.entries
+    val selectedIndex = tabs.indexOf(selectedTab).coerceAtLeast(0)
+    val itemShape = RoundedCornerShape(16.dp)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 10.dp),
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(
@@ -672,51 +684,76 @@ fun LockInBottomNavBar(
                 .background(GlassTokens.NavFill)
                 .border(width = 1.dp, brush = GlassTokens.CardEdge, shape = barShape)
                 .padding(6.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            contentAlignment = Alignment.CenterStart,
         ) {
-            LockInTab.entries.forEach { tab ->
-                val selected = tab == selectedTab
-                val itemShape = RoundedCornerShape(16.dp)
+            val gap = 4.dp
+            val slotWidth = (maxWidth - gap * (tabs.size - 1)) / tabs.size
 
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(itemShape)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    if (selected) ink else Color.Transparent,
-                                    if (selected) ink else Color.Transparent,
-                                ),
-                            ),
-                        )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { onTabSelected(tab) },
-                        )
-                        .padding(vertical = 9.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+            // Fractional slot position lets the pill glide between tabs.
+            val pillProgress by animateFloatAsState(
+                targetValue = selectedIndex.toFloat(),
+                animationSpec = spring(
+                    dampingRatio = 0.82f,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+                label = "navPillTravel",
+            )
+
+            Box(
+                modifier = Modifier
+                    .offset {
+                        val stride = slotWidth.toPx() + gap.toPx()
+                        IntOffset((pillProgress * stride).roundToInt(), 0)
+                    }
+                    .size(width = slotWidth, height = 50.dp)
+                    .clip(itemShape)
+                    .background(ink),
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                tabs.forEachIndexed { index, tab ->
+                    val selected = index == selectedIndex
+                    val contentColor by animateColorAsState(
+                        targetValue = if (selected) onInk else LockInPalette.TextTertiary,
+                        animationSpec = tween(240, easing = FastOutSlowInEasing),
+                        label = "navItemInk",
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(itemShape)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onTabSelected(tab) },
+                            )
+                            .padding(vertical = 9.dp),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            imageVector = tab.icon,
-                            contentDescription = tab.label,
-                            tint = if (selected) onInk else LockInPalette.TextTertiary,
-                            modifier = Modifier.size(17.dp),
-                        )
-                        Text(
-                            text = tab.label,
-                            fontSize = 9.5.sp,
-                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                            letterSpacing = 0.1.sp,
-                            color = if (selected) onInk else LockInPalette.TextTertiary,
-                            maxLines = 1,
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                imageVector = tab.icon,
+                                contentDescription = tab.label,
+                                tint = contentColor,
+                                modifier = Modifier.size(17.dp),
+                            )
+                            Text(
+                                text = tab.label,
+                                fontSize = 9.5.sp,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                                letterSpacing = 0.1.sp,
+                                color = contentColor,
+                                maxLines = 1,
+                            )
+                        }
                     }
                 }
             }

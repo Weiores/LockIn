@@ -254,7 +254,7 @@ fun ActiveSessionOverlay(
                             .clip(RoundedCornerShape(24.dp))
                             .border(1.dp, GlassTokens.rimLight(LockInPalette.Cyan), RoundedCornerShape(24.dp)),
                     ) {
-                        CameraBarcodeScannerView { scannedValue ->
+                        CameraBarcodeScannerView(onBarcodeDetected = { scannedValue ->
                             val expected = viewModel.activeTriggerValue
                             if (expected == null || expected.equals(scannedValue, ignoreCase = true)) {
                                 showUnlockSheet = false
@@ -263,7 +263,7 @@ fun ActiveSessionOverlay(
                             } else {
                                 unlockError = "That key doesn't match this session."
                             }
-                        }
+                        })
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -424,9 +424,9 @@ private fun ArmingScreen(
                                     shape = RoundedCornerShape(24.dp),
                                 ),
                         ) {
-                            CameraBarcodeScannerView { scannedValue ->
+                            CameraBarcodeScannerView(onBarcodeDetected = { scannedValue ->
                                 onBarcodeScanned(scannedValue)
-                            }
+                            })
                         }
                     }
                 }
