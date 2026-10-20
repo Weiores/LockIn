@@ -16,11 +16,15 @@ sealed interface Screen {
     @Serializable
     data object TriggerVault : Screen
 
-    /** Tab 3 — Study Analytics */
+    /** Tab 3 — Weekly notes and goals */
+    @Serializable
+    data object Notes : Screen
+
+    /** Tab 4 — Study Analytics */
     @Serializable
     data object Analytics : Screen
 
-    /** Tab 4 — Settings */
+    /** Settings (full-screen, opened from the profile menu) */
     @Serializable
     data object Settings : Screen
 
@@ -33,4 +37,8 @@ sealed interface Screen {
     /** Barcode scanner screen */
     @Serializable
     data object BarcodeScanner : Screen
+
+    /** NFC card reader screen */
+    @Serializable
+    data object NfcScanner : Screen
 }

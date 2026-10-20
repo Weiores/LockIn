@@ -4,4 +4,8 @@
     <string name="timer_notification_channel_description">Persistent notification for active study sessions</string>
     <string name="general_notification_channel_name">LockIn Alerts</string>
     <string name="general_notification_channel_description">Study zone prompts and reminders</string>
+    <string name="app_closed_channel_name">App Closed Reminder</string>
+    <string name="app_closed_channel_description">Heads-up reminder that a focus timer is still running while LockIn is in the background</string>
+    <string name="distraction_channel_name">Distraction Guard</string>
+    <string name="distraction_channel_description">Warning when you open a social app mid-session, and confirmation when the session is ended</string>
 </resources>

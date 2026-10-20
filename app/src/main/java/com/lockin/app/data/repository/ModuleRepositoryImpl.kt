@@ -40,6 +40,8 @@ class ModuleRepositoryImpl @Inject constructor(
         code = code,
         name = name,
         colorHex = colorHex,
+        weeklyGoalMinutes = weeklyGoalMinutes,
+        goalNote = goalNote,
         createdAt = createdAt,
         isArchived = isArchived,
     )
@@ -49,6 +51,8 @@ class ModuleRepositoryImpl @Inject constructor(
         code = code,
         name = name,
         colorHex = colorHex,
+        weeklyGoalMinutes = weeklyGoalMinutes,
+        goalNote = goalNote,
         createdAt = createdAt,
         isArchived = isArchived,
     )

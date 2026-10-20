@@ -19,6 +19,12 @@ data class ModuleEntity(
     @ColumnInfo(name = "color_hex")
     val colorHex: String,
 
+    @ColumnInfo(name = "weekly_goal_minutes", defaultValue = "0")
+    val weeklyGoalMinutes: Int = 0,
+
+    @ColumnInfo(name = "goal_note", defaultValue = "")
+    val goalNote: String = "",
+
     @ColumnInfo(name = "created_at")
     val createdAt: Instant = Instant.now(),
 

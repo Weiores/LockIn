@@ -4,10 +4,12 @@ import com.lockin.app.data.repository.ModuleRepositoryImpl
 import com.lockin.app.data.repository.PreferencesRepositoryImpl
 import com.lockin.app.data.repository.SessionRepositoryImpl
 import com.lockin.app.data.repository.TriggerRepositoryImpl
+import com.lockin.app.data.repository.WeeklyRepositoryImpl
 import com.lockin.app.domain.repository.ModuleRepository
 import com.lockin.app.domain.repository.PreferencesRepository
 import com.lockin.app.domain.repository.SessionRepository
 import com.lockin.app.domain.repository.TriggerRepository
+import com.lockin.app.domain.repository.WeeklyRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -33,5 +35,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPreferencesRepository(impl: PreferencesRepositoryImpl): PreferencesRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWeeklyRepository(impl: WeeklyRepositoryImpl): WeeklyRepository
 }
 

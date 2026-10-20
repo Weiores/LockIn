@@ -26,8 +26,6 @@
     <!-- Optional hardware features -->
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
-    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="true" />
-    <uses-feature android:name="android.hardware.sensor.proximity" android:required="false" />
     <uses-feature android:name="android.hardware.wifi" android:required="false" />
 
     <application
@@ -57,7 +55,7 @@
             android:exported="false">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Study timer with hardware sensor monitoring for deep-work sessions" />
+                android:value="Study timer with background notification monitoring and key verification for deep-work sessions" />
         </service>
 
         <receiver

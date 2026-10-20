@@ -9,80 +9,109 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.lockin.app.domain.model.AccentScheme
+import com.lockin.app.domain.model.ThemeMode
 
+/** Legacy flag kept for screens that only need to know the resolved mode. */
 val LocalDarkTheme = compositionLocalOf { true }
 
-private val DarkColorScheme = darkColorScheme(
-    primary = AppleBlueDark,
-    onPrimary = Color.White,
-    primaryContainer = AppleBlueDark.copy(alpha = 0.18f),
-    onPrimaryContainer = AppleBlueDark,
-    secondary = AppleOrangeDark,
-    onSecondary = Color.White,
-    tertiary = AppleGreenDark,
-    onTertiary = Color.White,
-    error = AppleRedDark,
-    onError = Color.White,
-    background = BackgroundDark,
-    onBackground = TextPrimaryDark,
-    surface = SurfaceDark,
-    onSurface = TextPrimaryDark,
-    surfaceVariant = SurfaceCardDark,
-    onSurfaceVariant = TextSecondaryDark,
-    outline = GlassBorderDark,
-    outlineVariant = Color.White.copy(alpha = 0.04f),
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = AppleBlue,
-    onPrimary = Color.White,
-    primaryContainer = AppleBlue.copy(alpha = 0.12f),
-    onPrimaryContainer = AppleBlue,
-    secondary = AppleOrange,
-    onSecondary = Color.White,
-    tertiary = AppleGreen,
-    onTertiary = Color.White,
-    error = AppleRed,
-    onError = Color.White,
-    background = BackgroundLight,
-    onBackground = TextPrimaryLight,
-    surface = SurfaceLight,
-    onSurface = TextPrimaryLight,
-    surfaceVariant = SurfaceCardLight,
-    onSurfaceVariant = TextSecondaryLight,
-    outline = GlassBorderLight,
-    outlineVariant = Color.Black.copy(alpha = 0.03f),
-)
-
+/**
+ * LockIn theming.
+ *
+ * Two independent axes:
+ *  - [ThemeMode]  — follow the system, or pin light / dark.
+ *  - [AccentScheme] — blue, green or red, all rendered with muted saturation so
+ *    the glass stays calm instead of glowing.
+ *
+ * Everything downstream reads `LockInPalette.*` / `GlassTokens.*`, which pull
+ * their values out of [LocalLockInColors], so a mode or scheme change repaints
+ * the whole app without touching a single screen.
+ */
 @Composable
 fun LockInTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    mode: ThemeMode = ThemeMode.SYSTEM,
+    scheme: AccentScheme = AccentScheme.BLUE,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val isDark = when (mode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+    val colors = lockInColors(scheme, isDark)
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = colorScheme.background.toArgb()
+            val activity = view.context as? Activity ?: return@SideEffect
+            val window = activity.window
+            // The top of the page is always a tinted sky, so the status icons
+            // stay light in both modes; the navigation bar follows the paper.
+            window.statusBarColor = colors.canvasTop.toArgb()
+            window.navigationBarColor = colors.canvasBottom.toArgb()
             WindowCompat.getInsetsController(window, view).apply {
-                isAppearanceLightStatusBars = !darkTheme
-                isAppearanceLightNavigationBars = !darkTheme
+                isAppearanceLightStatusBars = false
+                isAppearanceLightNavigationBars = !colors.isDark
             }
         }
     }
 
-    CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
+    CompositionLocalProvider(
+        LocalLockInColors provides colors,
+        LocalDarkTheme provides colors.isDark,
+    ) {
         MaterialTheme(
-            colorScheme = colorScheme,
+            colorScheme = colors.toMaterialScheme(),
             typography = LockInTypography,
             content = content,
         )
     }
+}
+
+/** Bridge the glass palette into a Material 3 scheme (dialogs, text fields, switches). */
+private fun LockInColors.toMaterialScheme() = if (isDark) {
+    darkColorScheme(
+        primary = accent,
+        onPrimary = onAccent,
+        primaryContainer = accent.copy(alpha = 0.18f),
+        onPrimaryContainer = accent,
+        secondary = mint,
+        onSecondary = onAccent,
+        tertiary = amber,
+        onTertiary = onAccent,
+        error = coral,
+        onError = onAccent,
+        background = canvasBottom,
+        onBackground = textPrimary,
+        surface = sheetSurface,
+        onSurface = textPrimary,
+        surfaceVariant = glassTop,
+        onSurfaceVariant = textSecondary,
+        outline = surfaceTint.copy(alpha = 0.10f),
+        outlineVariant = surfaceTint.copy(alpha = 0.04f),
+    )
+} else {
+    lightColorScheme(
+        primary = accent,
+        onPrimary = onAccent,
+        primaryContainer = accent.copy(alpha = 0.14f),
+        onPrimaryContainer = accentDeep,
+        secondary = mint,
+        onSecondary = onAccent,
+        tertiary = amber,
+        onTertiary = onAccent,
+        error = coral,
+        onError = onAccent,
+        background = canvasBottom,
+        onBackground = textPrimary,
+        surface = sheetSurface,
+        onSurface = textPrimary,
+        surfaceVariant = glassBottom,
+        onSurfaceVariant = textSecondary,
+        outline = surfaceTint.copy(alpha = 0.12f),
+        outlineVariant = surfaceTint.copy(alpha = 0.06f),
+    )
 }

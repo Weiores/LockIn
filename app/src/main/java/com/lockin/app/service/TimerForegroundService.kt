@@ -7,9 +7,13 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
+import com.lockin.app.domain.model.FailReason
 import com.lockin.app.domain.model.TimerState
 import com.lockin.app.domain.model.TriggerType
+import com.lockin.app.domain.repository.PreferencesRepository
+import com.lockin.app.hardware.haptics.HapticFeedbackHelper
 import com.lockin.app.util.Constants
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +45,11 @@ class TimerForegroundService : Service() {
     private var stateObserverJob: Job? = null
     private var distractionObserverJob: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
+
+    /** Shared so the distraction guard can refresh its countdown notification in place. */
+    private val notificationManager: NotificationManagerCompat by lazy {
+        NotificationManagerCompat.from(this)
+    }
 
     companion object {
         const val ACTION_START = "com.lockin.app.ACTION_START_TIMER"
@@ -97,7 +106,14 @@ class TimerForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        if (intent == null) {
+            // The system restarted us (sticky service). Re-attach to whatever is
+            // still running instead of tearing it down.
+            handleRestart()
+            return START_STICKY
+        }
+
+        when (intent.action) {
             ACTION_START -> {
                 val sessionId = intent.getLongExtra(EXTRA_SESSION_ID, -1L)
                 val durationMs = intent.getLongExtra(EXTRA_DURATION_MS, 25 * 60 * 1000L)
@@ -118,7 +134,67 @@ class TimerForegroundService : Service() {
                 handleStop()
             }
         }
-        return START_NOT_STICKY
+
+        return if (timerEngine.timerState.value is TimerState.ActiveLocked ||
+            timerEngine.timerState.value is TimerState.ArmingTrigger
+        ) {
+            START_STICKY
+        } else {
+            START_NOT_STICKY
+        }
+    }
+
+    /**
+     * Sticky-restart recovery: the engine is a @Singleton, so its state survived
+     * the process restart and we only need to rebuild the observers and get the
+     * foreground notification back up.
+     */
+    private fun handleRestart() {
+        val state = timerEngine.timerState.value
+        val moduleCode = timerEngine.activeModuleCode
+
+        when (state) {
+            is TimerState.ActiveLocked -> {
+                if (wakeLock?.isHeld != true) {
+                    wakeLock?.acquire(state.remainingMs + 60_000L)
+                }
+                val notification = notificationHelper.buildTimerNotification(
+                    remainingMs = state.remainingMs,
+                    totalMs = state.totalMs,
+                    isPaused = state.isPaused,
+                    moduleCode = moduleCode,
+                )
+                ServiceCompat.startForeground(
+                    this,
+                    Constants.TIMER_NOTIFICATION_ID,
+                    notification,
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                    } else {
+                        0
+                    },
+                )
+                observeTimerState(moduleCode)
+            }
+            is TimerState.ArmingTrigger -> {
+                val notification = notificationHelper.buildArmingNotification(
+                    triggerType = state.triggerType,
+                    moduleCode = moduleCode,
+                )
+                ServiceCompat.startForeground(
+                    this,
+                    Constants.TIMER_NOTIFICATION_ID,
+                    notification,
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                    } else {
+                        0
+                    },
+                )
+                observeTimerState(moduleCode)
+            }
+            else -> cleanUpAndStop()
+        }
     }
 
     private fun handleStart(
@@ -131,7 +207,7 @@ class TimerForegroundService : Service() {
         wakeLock?.acquire(durationMs + 60_000L)
 
         // Post initial notification immediately for foreground service contract
-        val initialNotification = if (triggerType == TriggerType.FLIP || triggerType == TriggerType.BARCODE || triggerType == TriggerType.NFC) {
+        val initialNotification = if (triggerType == TriggerType.BARCODE || triggerType == TriggerType.NFC) {
             notificationHelper.buildArmingNotification(triggerType, moduleCode)
         } else {
             notificationHelper.buildTimerNotification(
@@ -161,7 +237,6 @@ class TimerForegroundService : Service() {
         stateObserverJob?.cancel()
         stateObserverJob = serviceScope.launch {
             var lastNotificationUpdateSec = 0L
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
 
             timerEngine.timerState.collect { state ->
                 when (state) {
@@ -190,14 +265,6 @@ class TimerForegroundService : Service() {
                             notificationManager.notify(Constants.TIMER_NOTIFICATION_ID, notification)
                         }
                     }
-                    is TimerState.GracePeriodWarning -> {
-                        val graceSec = (state.graceRemainingMs / 1000).coerceAtLeast(0L)
-                        val notification = notificationHelper.buildGraceNotification(
-                            graceRemainingSec = graceSec,
-                            moduleCode = moduleCode,
-                        )
-                        notificationManager.notify(Constants.TIMER_NOTIFICATION_ID, notification)
-                    }
                     is TimerState.Completed, is TimerState.Failed -> {
                         cleanUpAndStop()
                     }
@@ -215,31 +282,71 @@ class TimerForegroundService : Service() {
             var lastAlertEpochMs = 0L
 
             preferencesRepository.blacklistedPackages.collect { blacklist ->
-                distractionGuard.observeForegroundApp(1500L).collect { fgPackage ->
-                    if (fgPackage != null && fgPackage != packageName && blacklist.contains(fgPackage)) {
+                distractionGuard.observeForegroundApp(Constants.DISTRACTION_POLL_INTERVAL_MS)
+                    .collect { fgPackage ->
+                        if (fgPackage == null ||
+                            fgPackage == packageName ||
+                            !blacklist.contains(fgPackage)
+                        ) {
+                            return@collect
+                        }
+
                         val now = System.currentTimeMillis()
                         // Alert at most once every 6 seconds to avoid notification flapping
-                        if (now - lastAlertEpochMs > 6000L) {
-                            lastAlertEpochMs = now
-                            timerEngine.incrementBreakCount()
-                            hapticHelper.startGracePeriodWarningHaptic()
+                        if (now - lastAlertEpochMs <= 6000L) return@collect
+                        lastAlertEpochMs = now
 
-                            val friendlyName = when {
-                                fgPackage.contains("instagram") -> "Instagram"
-                                fgPackage.contains("tiktok") || fgPackage.contains("musically") -> "TikTok"
-                                fgPackage.contains("twitter") || fgPackage.contains("x") -> "X (Twitter)"
-                                fgPackage.contains("reddit") -> "Reddit"
-                                fgPackage.contains("youtube") -> "YouTube"
-                                fgPackage.contains("snapchat") -> "Snapchat"
-                                fgPackage.contains("facebook") -> "Facebook"
-                                else -> "Social Media"
+                        timerEngine.incrementBreakCount()
+                        hapticHelper.performDistractionWarningHaptic()
+
+                        val friendlyName = DistractionFriendlyNames.nameFor(fgPackage)
+                        val graceDeadline = now + Constants.DISTRACTION_GRACE_SECONDS * 1000L
+
+                        var stillThere = true
+                        while (stillThere && System.currentTimeMillis() < graceDeadline) {
+                            val secondsLeft = ((graceDeadline - System.currentTimeMillis()) / 1000L) + 1L
+                            postDistractionCountdown(friendlyName, moduleCode, secondsLeft)
+
+                            delay(1000L)
+
+                            val currentPackage = distractionGuard.readForegroundPackageName()
+                            val stillDistracted = currentPackage != null &&
+                                currentPackage != packageName &&
+                                blacklist.contains(currentPackage)
+
+                            if (!stillDistracted) {
+                                // The user actually left the offending app: stand down.
+                                notificationHelper.cancelDistractionWarningNotification()
+                                stillThere = false
                             }
-                            notificationHelper.showDistractionWarningNotification(friendlyName, moduleCode)
                         }
+
+                        if (!stillThere) return@collect
+
+                        // Grace window ran out — the session dies here.
+                        notificationHelper.cancelDistractionWarningNotification()
+                        hapticHelper.performDistractionWarningHaptic()
+                        notificationHelper.showSessionEndedByDistraction(friendlyName, moduleCode)
+                        timerEngine.stopTimer(FailReason.DISTRACTION)
+                        return@collect
                     }
-                }
             }
         }
+    }
+
+    private fun postDistractionCountdown(
+        appName: String,
+        moduleCode: String?,
+        secondsLeft: Long,
+    ) {
+        notificationManager.notify(
+            Constants.DISTRACTION_NOTIFICATION_ID,
+            notificationHelper.buildDistractionWarningNotification(
+                appName = appName,
+                moduleCode = moduleCode,
+                secondsLeft = secondsLeft,
+            ),
+        )
     }
 
     private fun handleStop() {
@@ -256,6 +363,33 @@ class TimerForegroundService : Service() {
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+
+        // The user swiped the app away. The session is still theirs to finish, so
+        // the foreground notification keeps counting down and a heads-up reminder
+        // tells them the timer is alive out here.
+        val state = timerEngine.timerState.value
+        if (state is TimerState.ActiveLocked) {
+            notificationHelper.showAppClosedNotification(
+                remainingMs = state.remainingMs,
+                moduleCode = timerEngine.activeModuleCode,
+            )
+            val notification = notificationHelper.buildTimerNotification(
+                remainingMs = state.remainingMs,
+                totalMs = state.totalMs,
+                isPaused = state.isPaused,
+                moduleCode = timerEngine.activeModuleCode,
+            )
+            notificationManager.notify(Constants.TIMER_NOTIFICATION_ID, notification)
+        } else if (state is TimerState.ArmingTrigger) {
+            notificationHelper.showAppClosedNotification(
+                remainingMs = state.plannedDurationMs,
+                moduleCode = timerEngine.activeModuleCode,
+            )
+        }
     }
 
     override fun onDestroy() {

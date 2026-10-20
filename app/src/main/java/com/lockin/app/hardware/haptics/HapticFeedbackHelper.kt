@@ -33,10 +33,10 @@ class HapticFeedbackHelper @Inject constructor(
     }
 
     /**
-     * Urgent pulsating warning waveform when phone is lifted during an active Flip-to-Lock session.
-     * Repeats until cancelled.
+     * Urgent pulsating waveform fired when a blacklisted app is opened during a
+     * locked session. Repeats until cancelled.
      */
-    fun startGracePeriodWarningHaptic() {
+    fun performDistractionWarningHaptic() {
         if (vibrator?.hasVibrator() == true) {
             // Pattern: 0ms delay, 180ms pulse, 120ms pause, 180ms pulse, 500ms pause
             val timings = longArrayOf(0, 180, 120, 180, 500)
@@ -47,7 +47,7 @@ class HapticFeedbackHelper @Inject constructor(
     }
 
     /**
-     * Stops any ongoing grace warning vibration immediately.
+     * Stops any ongoing warning vibration immediately.
      */
     fun cancelHaptics() {
         vibrator?.cancel()

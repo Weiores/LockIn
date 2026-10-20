@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lockin.app.domain.model.CourseModule
 import com.lockin.app.domain.model.FailReason
+import com.lockin.app.domain.model.GoalProgress
+import com.lockin.app.domain.model.SessionOutcome
 import com.lockin.app.domain.model.TimerState
 import com.lockin.app.domain.repository.ModuleRepository
 import com.lockin.app.domain.repository.SessionRepository
@@ -19,8 +21,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 
 @HiltViewModel
@@ -37,6 +43,37 @@ class TimerViewModel @Inject constructor(
 
     private val _activeModule = MutableStateFlow<CourseModule?>(null)
     val activeModule: StateFlow<CourseModule?> = _activeModule.asStateFlow()
+
+    /** Start of the current week — the window every module goal is measured over. */
+    private val weekStart: Instant = run {
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        val daysSinceMonday = ((today.dayOfWeek.value + 6) % 7).toLong()
+        today.minusDays(daysSinceMonday).atStartOfDay(zone).toInstant()
+    }
+
+    /**
+     * Weekly goal progress for the module being studied, recomputed whenever a
+     * session lands so the Active Locked card is always current.
+     */
+    val activeModuleGoal: StateFlow<GoalProgress?> = combine(
+        _activeModule,
+        sessionRepository.observeSessionsSince(weekStart),
+    ) { module, sessions ->
+        if (module == null) {
+            null
+        } else {
+            val focusedMs = sessions
+                .filter { it.moduleId == module.id && it.outcome == SessionOutcome.COMPLETED }
+                .sumOf { it.actualDurationMs }
+            GoalProgress(
+                moduleCode = module.code,
+                note = module.goalNote,
+                targetMinutes = module.weeklyGoalMinutes,
+                focusedMinutes = (focusedMs / 60_000L).toInt(),
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private var nfcJob: Job? = null
 
@@ -112,11 +149,6 @@ class TimerViewModel @Inject constructor(
         timerEngine.stopTimer(FailReason.USER_CANCELLED)
         timerEngine.resetToIdle()
         _activeModule.value = null
-    }
-
-    fun giveUp() {
-        stopNfcArmingListener()
-        timerEngine.stopTimer(FailReason.USER_CANCELLED)
     }
 
     fun dismiss(context: Context? = null) {

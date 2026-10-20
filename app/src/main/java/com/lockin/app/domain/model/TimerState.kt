@@ -18,13 +18,6 @@ sealed interface TimerState {
         val isPaused: Boolean = false,
     ) : TimerState
 
-    data class GracePeriodWarning(
-        val sessionId: Long,
-        val graceRemainingMs: Long,
-        val sessionRemainingMs: Long,
-        val totalMs: Long,
-    ) : TimerState
-
     data class Completed(
         val sessionId: Long,
         val actualDurationMs: Long,

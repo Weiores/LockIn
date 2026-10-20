@@ -3,6 +3,8 @@ package com.lockin.app.ui.settings
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lockin.app.domain.model.AccentScheme
+import com.lockin.app.domain.model.ThemeMode
 import com.lockin.app.domain.model.TriggerProfile
 import com.lockin.app.domain.model.TriggerType
 import com.lockin.app.domain.repository.PreferencesRepository
@@ -33,11 +35,14 @@ class SettingsViewModel @Inject constructor(
     val defaultBreakMinutes: StateFlow<Int> = preferencesRepository.defaultBreakMinutes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 5)
 
-    val graceCountdownSeconds: StateFlow<Int> = preferencesRepository.graceCountdownSeconds
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 10)
-
     val vibrationEnabled: StateFlow<Boolean> = preferencesRepository.vibrationEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val themeMode: StateFlow<ThemeMode> = preferencesRepository.themeMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
+
+    val accentScheme: StateFlow<AccentScheme> = preferencesRepository.accentScheme
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AccentScheme.BLUE)
 
     val blacklistedPackages: StateFlow<Set<String>> = preferencesRepository.blacklistedPackages
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
@@ -116,15 +121,23 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setGraceCountdown(seconds: Int) {
-        viewModelScope.launch {
-            preferencesRepository.setGraceCountdownSeconds(seconds)
-        }
-    }
-
     fun setVibrationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesRepository.setVibrationEnabled(enabled)
+        }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch {
+            preferencesRepository.setThemeMode(mode)
+            hapticHelper.performLockSuccessHaptic()
+        }
+    }
+
+    fun setAccentScheme(scheme: AccentScheme) {
+        viewModelScope.launch {
+            preferencesRepository.setAccentScheme(scheme)
+            hapticHelper.performLockSuccessHaptic()
         }
     }
 }

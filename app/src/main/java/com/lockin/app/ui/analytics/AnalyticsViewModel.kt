@@ -28,7 +28,7 @@ import javax.inject.Inject
 enum class SessionFilter {
     ALL,
     COMPLETED,
-    FLIP,
+    MANUAL,
     BARCODE,
     NFC,
 }
@@ -78,7 +78,7 @@ class AnalyticsViewModel @Inject constructor(
         when (filter) {
             SessionFilter.ALL -> sessions
             SessionFilter.COMPLETED -> sessions.filter { it.outcome == SessionOutcome.COMPLETED }
-            SessionFilter.FLIP -> sessions.filter { it.triggerType == TriggerType.FLIP }
+            SessionFilter.MANUAL -> sessions.filter { it.triggerType == TriggerType.MANUAL }
             SessionFilter.BARCODE -> sessions.filter { it.triggerType == TriggerType.BARCODE }
             SessionFilter.NFC -> sessions.filter { it.triggerType == TriggerType.NFC }
         }
@@ -138,7 +138,7 @@ class AnalyticsViewModel @Inject constructor(
 
             val now = Instant.now()
 
-            // 1. Today: 50m SC2008 (FLIP) & 25m SC2002 (BARCODE)
+            // 1. Today: 50m SC2008 (MANUAL) & 25m SC2002 (BARCODE)
             sessionRepository.insert(
                 StudySession(
                     moduleId = mod1?.id,
@@ -146,7 +146,7 @@ class AnalyticsViewModel @Inject constructor(
                     actualDurationMs = 50 * 60 * 1000L,
                     startTime = now.minus(2, ChronoUnit.HOURS),
                     endTime = now.minus(1, ChronoUnit.HOURS).minus(10, ChronoUnit.MINUTES),
-                    triggerType = TriggerType.FLIP,
+                    triggerType = TriggerType.MANUAL,
                     triggerValue = null,
                     outcome = SessionOutcome.COMPLETED,
                     breakCount = 1,
@@ -169,7 +169,7 @@ class AnalyticsViewModel @Inject constructor(
                 ),
             )
 
-            // 2. Yesterday: 90m SC2006 (NFC) & 25m SC2008 (FLIP)
+            // 2. Yesterday: 90m SC2006 (NFC) & 25m SC2008 (MANUAL)
             sessionRepository.insert(
                 StudySession(
                     moduleId = mod3?.id,
@@ -185,7 +185,7 @@ class AnalyticsViewModel @Inject constructor(
                 ),
             )
 
-            // 3. 2 days ago: 50m SC2002 (FLIP)
+            // 3. 2 days ago: 50m SC2002 (MANUAL)
             sessionRepository.insert(
                 StudySession(
                     moduleId = mod2?.id,
@@ -193,7 +193,7 @@ class AnalyticsViewModel @Inject constructor(
                     actualDurationMs = 50 * 60 * 1000L,
                     startTime = now.minus(50, ChronoUnit.HOURS),
                     endTime = now.minus(49, ChronoUnit.HOURS).minus(10, ChronoUnit.MINUTES),
-                    triggerType = TriggerType.FLIP,
+                    triggerType = TriggerType.MANUAL,
                     triggerValue = null,
                     outcome = SessionOutcome.COMPLETED,
                     breakCount = 1,
@@ -217,7 +217,7 @@ class AnalyticsViewModel @Inject constructor(
                 ),
             )
 
-            // 5. 4 days ago: 50m SC2006 (FLIP)
+            // 5. 4 days ago: 50m SC2006 (MANUAL)
             sessionRepository.insert(
                 StudySession(
                     moduleId = mod3?.id,
@@ -225,7 +225,7 @@ class AnalyticsViewModel @Inject constructor(
                     actualDurationMs = 50 * 60 * 1000L,
                     startTime = now.minus(98, ChronoUnit.HOURS),
                     endTime = now.minus(97, ChronoUnit.HOURS).minus(10, ChronoUnit.MINUTES),
-                    triggerType = TriggerType.FLIP,
+                    triggerType = TriggerType.MANUAL,
                     triggerValue = null,
                     outcome = SessionOutcome.COMPLETED,
                     breakCount = 0,
@@ -235,3 +235,4 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 }
+

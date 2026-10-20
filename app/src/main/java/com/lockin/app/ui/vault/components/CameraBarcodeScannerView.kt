@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -54,13 +55,30 @@ import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.theme.AppleBlue
 import java.util.concurrent.Executors
 
+/**
+ * Bare CameraX preview with an ML Kit barcode analyzer.
+ *
+ * @param showOverlay when true the composite draws its own scrim, viewfinder and
+ *   laser line. Full-screen scanner pages set this to false so they can own the
+ *   whole chrome.
+ * @param torchEnabled drives the physical torch. Availability is reported back
+ *   through [onTorchAvailabilityChanged] so the page can hide the control on
+ *   devices without a flash unit.
+ */
 @Composable
 fun CameraBarcodeScannerView(
     modifier: Modifier = Modifier,
+    showOverlay: Boolean = true,
+    torchEnabled: Boolean = false,
     onBarcodeDetected: (String) -> Unit,
+    onTorchAvailabilityChanged: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Holds the bound camera so torch toggles can reach the camera control.
+    var camera by remember { mutableStateOf<Camera?>(null) }
+    val torchAvailable = camera?.cameraInfo?.hasFlashUnit() == true
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -136,9 +154,22 @@ fun CameraBarcodeScannerView(
 
     DisposableEffect(Unit) {
         onDispose {
+            // Never leave the flash burning after the scanner goes away.
+            camera?.cameraControl?.enableTorch(false)
             cameraExecutor.shutdown()
         }
     }
+
+    // Torch follows the caller's state as soon as a camera is bound.
+    LaunchedEffect(torchEnabled, camera) {
+        val bound = camera ?: return@LaunchedEffect
+        if (bound.cameraInfo.hasFlashUnit()) {
+            runCatching { bound.cameraControl.enableTorch(torchEnabled) }
+        }
+    }
+
+    // Report flash-unit availability so the page can hide the torch affordance.
+    LaunchedEffect(torchAvailable) { onTorchAvailabilityChanged(torchAvailable) }
 
     Box(modifier = modifier.fillMaxSize()) {
         // CameraX Live Preview View
@@ -167,7 +198,7 @@ fun CameraBarcodeScannerView(
 
                     try {
                         cameraProvider.unbindAll()
-                        cameraProvider.bindToLifecycle(
+                        camera = cameraProvider.bindToLifecycle(
                             lifecycleOwner,
                             cameraSelector,
                             preview,
@@ -184,64 +215,66 @@ fun CameraBarcodeScannerView(
         )
 
         // Viewfinder Reticle & Laser Sweep Animation
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.45f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            val reticleSize = 250.dp
-            val reticleShape = RoundedCornerShape(24.dp)
-
-            val infiniteTransition = rememberInfiniteTransition(label = "laserSweep")
-            val laserOffset by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 230f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(1800, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-                label = "laserOffset",
-            )
-
-            // Transparent center cutout for the scanner frame
+        if (showOverlay) {
             Box(
                 modifier = Modifier
-                    .size(reticleSize)
-                    .clip(reticleShape)
-                    .border(2.dp, AppleBlue.copy(alpha = 0.8f), reticleShape),
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.45f)),
+                contentAlignment = Alignment.Center,
             ) {
-                // Moving laser scanner line
+                val reticleSize = 250.dp
+                val reticleShape = RoundedCornerShape(24.dp)
+
+                val infiniteTransition = rememberInfiniteTransition(label = "laserSweep")
+                val laserOffset by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 230f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(1800, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                    label = "laserOffset",
+                )
+
+                // Transparent center cutout for the scanner frame
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .offset(y = laserOffset.dp)
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    AppleBlue,
-                                    Color.White,
-                                    AppleBlue,
-                                    Color.Transparent,
+                        .size(reticleSize)
+                        .clip(reticleShape)
+                        .border(2.dp, AppleBlue.copy(alpha = 0.8f), reticleShape),
+                ) {
+                    // Moving laser scanner line
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .offset(y = laserOffset.dp)
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        AppleBlue,
+                                        Color.White,
+                                        AppleBlue,
+                                        Color.Transparent,
+                                    ),
                                 ),
                             ),
-                        ),
+                    )
+                }
+
+                // Top instruction
+                Text(
+                    text = "Align barcode or QR code within frame",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.85f),
+                    letterSpacing = 0.5.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 48.dp),
                 )
             }
-
-            // Top instruction
-            Text(
-                text = "Align barcode or QR code within frame",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Medium,
-                color = Color.White.copy(alpha = 0.85f),
-                letterSpacing = 0.5.sp,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 48.dp),
-            )
         }
     }
 }

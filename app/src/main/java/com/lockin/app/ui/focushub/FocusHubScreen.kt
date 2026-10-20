@@ -1,19 +1,14 @@
 package com.lockin.app.ui.focushub
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,21 +24,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Contactless
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -55,33 +45,50 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.lockin.app.domain.model.CourseModule
 import com.lockin.app.domain.model.TimerState
+import com.lockin.app.domain.model.TriggerProfile
 import com.lockin.app.domain.model.TriggerType
 import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.components.GlassCard
-import com.lockin.app.ui.components.TimerRingCanvas
-import com.lockin.app.ui.theme.AppleBlue
-import com.lockin.app.ui.theme.AppleGreen
-import com.lockin.app.ui.theme.AppleOrange
-import com.lockin.app.ui.theme.AppleRed
-import com.lockin.app.ui.theme.LocalDarkTheme
+import com.lockin.app.ui.components.GlassPrimaryButton
+import com.lockin.app.ui.components.LockInAmbientBackground
+import com.lockin.app.ui.theme.GlassRadius
+import com.lockin.app.ui.theme.GlassType
+import com.lockin.app.ui.theme.LockInPalette
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+/**
+ * Screen 1 — Today.
+ *
+ * A tinted sky, one white focus card, the lock-mode row, and a seven-day strip.
+ * Everything the screen shows is either an action or a number.
+ */
 @Composable
 fun FocusHubScreen(
     onNavigateToActiveSession: (Long) -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToCourses: () -> Unit = {},
     viewModel: FocusHubViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    val isDark = LocalDarkTheme.current
-    val systemDark = isSystemInDarkTheme()
 
     val timerState by viewModel.timerState.collectAsState()
     val modules by viewModel.modules.collectAsState()
@@ -90,536 +97,129 @@ fun FocusHubScreen(
     val selectedTriggerType by viewModel.selectedTriggerType.collectAsState()
     val selectedTriggerProfile by viewModel.selectedTriggerProfile.collectAsState()
     val savedTriggers by viewModel.savedTriggers.collectAsState()
-    val activeStudyZone by viewModel.activeStudyZone.collectAsState()
-    val currentWifi by viewModel.currentWifi.collectAsState()
     val streakDays by viewModel.streakDays.collectAsState()
+    val weeklyFocusByModule by viewModel.weeklyFocusByModule.collectAsState()
+    val weekDays by viewModel.lastSevenDays.collectAsState()
 
     val isSessionActive = timerState is TimerState.ActiveLocked ||
-            timerState is TimerState.ArmingTrigger ||
-            timerState is TimerState.GracePeriodWarning
+        timerState is TimerState.ArmingTrigger
+    val isPaused = (timerState as? TimerState.ActiveLocked)?.isPaused == true
 
-    val activeRemainingMs = when (val s = timerState) {
-        is TimerState.ActiveLocked -> s.remainingMs
-        is TimerState.GracePeriodWarning -> s.sessionRemainingMs
-        is TimerState.ArmingTrigger -> s.plannedDurationMs
-        else -> null
-    }
-    val activeTotalMs = when (val s = timerState) {
-        is TimerState.ActiveLocked -> s.totalMs
-        is TimerState.GracePeriodWarning -> s.totalMs
-        is TimerState.ArmingTrigger -> s.plannedDurationMs
+    val remainingMs = when (val state = timerState) {
+        is TimerState.ActiveLocked -> state.remainingMs
+        is TimerState.ArmingTrigger -> state.plannedDurationMs
         else -> null
     }
 
-    val displayRemainingMs = activeRemainingMs ?: (selectedDurationMinutes * 60 * 1000L)
-    val displayTotalMs = activeTotalMs ?: (selectedDurationMinutes * 60 * 1000L)
+    val goalTarget = selectedModule?.weeklyGoalMinutes ?: 0
+    val goalMinutes = selectedModule?.let { weeklyFocusByModule[it.id] ?: 0 } ?: 0
+    val goalFraction = if (goalTarget > 0) {
+        (goalMinutes.toFloat() / goalTarget).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
 
     var showStopDialog by remember { mutableStateOf(false) }
+    var showGoalEditor by remember { mutableStateOf(false) }
 
     val estimatedEndTime = remember(selectedDurationMinutes) {
-        val now = LocalTime.now()
-        val end = now.plusMinutes(selectedDurationMinutes.toLong())
-        val formatter = DateTimeFormatter.ofPattern("h:mm a")
-        end.format(formatter)
+        LocalTime.now()
+            .plusMinutes(selectedDurationMinutes.toLong())
+            .format(DateTimeFormatter.ofPattern("h:mm a"))
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        // --- Top Header: Streak + Wi-Fi Pill + Light/Dark Toggle ---
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // Streak badge
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.LocalFireDepartment,
-                        contentDescription = "Streak",
-                        tint = AppleOrange,
-                        modifier = Modifier.size(26.dp),
-                    )
-                    Column {
-                        Text(
-                            text = "$streakDays Days",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Text(
-                            text = "Current Streak",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LockInAmbientBackground()
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    // Wi-Fi status pill
-                    val wifiText = when {
-                        activeStudyZone != null -> activeStudyZone!!.label
-                        currentWifi.isConnected && !currentWifi.ssid.isNullOrBlank() -> currentWifi.ssid!!
-                        currentWifi.isConnected -> "Wi-Fi Active"
-                        else -> "Offline"
-                    }
-                    val isZoneActive = activeStudyZone != null
-
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (isZoneActive) {
-                                    AppleGreen.copy(alpha = if (isDark) 0.18f else 0.10f)
-                                } else {
-                                    if (isDark) Color.White.copy(alpha = 0.07f) else Color.Black.copy(alpha = 0.04f)
-                                },
-                            )
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Wifi,
-                            contentDescription = "Wi-Fi",
-                            tint = if (currentWifi.isConnected) AppleGreen else Color.Gray,
-                            modifier = Modifier.size(13.dp),
-                        )
-                        Text(
-                            text = wifiText,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = if (isZoneActive) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isZoneActive) AppleGreen else MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
-                    }
-
-                    // Theme Mode Toggle (Sun/Moon)
-                    IconButton(
-                        onClick = { viewModel.toggleDarkMode(isDark) },
-                        modifier = Modifier.size(34.dp),
-                    ) {
-                        Icon(
-                            imageVector = if (isDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                            contentDescription = "Toggle Light/Dark Mode",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                }
-            }
-        }
-
-        // --- Trigger Mode Selector (Manual vs Flip to Lock) ---
-        AnimatedVisibility(visible = !isSessionActive) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "LOCK-IN TRIGGER",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.1.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 2.dp),
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    val triggerModes = listOf(
-                        Triple(TriggerType.MANUAL, "Manual Timer", Icons.Filled.PlayArrow),
-                        Triple(TriggerType.FLIP, "Flip to Lock", Icons.Filled.ScreenRotation),
-                    )
-
-                    triggerModes.forEach { (type, label, icon) ->
-                        val isSelected = selectedTriggerProfile == null && selectedTriggerType == type
-                        val chipBg by animateColorAsState(
-                            targetValue = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
-                            },
-                            animationSpec = spring(),
-                            label = "triggerChipBg",
-                        )
-                        val chipTextColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(chipBg)
-                                .clickable { viewModel.selectTriggerType(type) }
-                                .padding(horizontal = 12.dp, vertical = 9.dp),
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                            ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = label,
-                                    tint = chipTextColor,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = chipTextColor,
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Saved Physical Keys (Barcode & NFC Card)
-                if (savedTriggers.isNotEmpty()) {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        items(savedTriggers) { trigger ->
-                            val isSelected = selectedTriggerProfile?.id == trigger.id
-                            val chipBg by animateColorAsState(
-                                targetValue = if (isSelected) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
-                                },
-                                animationSpec = spring(),
-                                label = "savedKeyBg",
-                            )
-                            val chipTextColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(chipBg)
-                                    .clickable { viewModel.selectSavedTrigger(trigger) }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = if (trigger.type == TriggerType.BARCODE) Icons.Filled.QrCodeScanner else Icons.Filled.Contactless,
-                                        contentDescription = trigger.label,
-                                        tint = chipTextColor,
-                                        modifier = Modifier.size(15.dp),
-                                    )
-                                    Text(
-                                        text = trigger.label,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = chipTextColor,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- Course Module Picker (Horizontal Clean Chips) ---
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "COURSE MODULE",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 1.1.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 2.dp),
-            )
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item {
-                    val isGeneralSelected = selectedModule == null
-                    val chipBg by animateColorAsState(
-                        targetValue = if (isGeneralSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
-                        },
-                        animationSpec = spring(),
-                        label = "generalChipBg",
-                    )
-                    val chipTextColor = if (isGeneralSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(chipBg)
-                            .clickable { viewModel.selectModule(null) }
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            text = "General Focus",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = if (isGeneralSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = chipTextColor,
-                        )
-                    }
-                }
-
-                items(modules) { module ->
-                    val isSelected = selectedModule?.id == module.id
-                    val moduleColor = try {
-                        Color(android.graphics.Color.parseColor(module.colorHex))
-                    } catch (e: Exception) {
-                        AppleBlue
-                    }
-
-                    val chipBg by animateColorAsState(
-                        targetValue = if (isSelected) {
-                            moduleColor
-                        } else {
-                            if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
-                        },
-                        animationSpec = spring(),
-                        label = "moduleChipBg",
-                    )
-                    val chipTextColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(chipBg)
-                            .clickable { viewModel.selectModule(module) }
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            if (!isSelected) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(moduleColor),
-                                )
-                            }
-                            Text(
-                                text = module.code,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = chipTextColor,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- Clean Floating Timer Dial (No Square Borders!) ---
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 22.dp)
+                .padding(top = 12.dp, bottom = 26.dp),
         ) {
-            TimerRingCanvas(
-                remainingMs = displayRemainingMs,
-                totalMs = displayTotalMs,
-                isPaused = (timerState as? TimerState.ActiveLocked)?.isPaused ?: false,
-                size = 250.dp,
-                strokeWidth = 10.dp,
+            HubHeader(
+                streakDays = streakDays,
+                goalFraction = goalFraction,
+                hasGoal = goalTarget > 0,
+                onOpenSettings = onNavigateToSettings,
             )
 
-            // Projected End Time
-            Text(
-                text = if (isSessionActive) "Session in progress" else "Ends at $estimatedEndTime",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Spacer(modifier = Modifier.height(22.dp))
+
+            ModuleRail(
+                modules = modules,
+                selectedModule = selectedModule,
+                onSelectModule = { viewModel.selectModule(it) },
+                onAddCourse = onNavigateToCourses,
             )
 
-            // Duration Presets (Hidden when session is actively running)
-            AnimatedVisibility(visible = !isSessionActive) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    listOf(25, 50, 90).forEach { mins ->
-                        val isSelected = selectedDurationMinutes == mins
-                        val pillBg by animateColorAsState(
-                            targetValue = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
-                            },
-                            animationSpec = spring(),
-                            label = "presetPillBg",
-                        )
-                        val pillTextColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+            Spacer(modifier = Modifier.height(16.dp))
 
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(pillBg)
-                                .clickable { viewModel.selectDuration(mins) }
-                                .padding(horizontal = 20.dp, vertical = 9.dp),
-                        ) {
-                            Text(
-                                text = "${mins}m",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = pillTextColor,
-                            )
-                        }
+            FocusCard(
+                module = selectedModule,
+                goalMinutes = goalMinutes,
+                goalTarget = goalTarget,
+                isSessionActive = isSessionActive,
+                isPaused = isPaused,
+                remainingLabel = remainingMs?.let { "${formatClock(it)} left" },
+                endTimeLabel = "Ends $estimatedEndTime",
+                selectedDurationMinutes = selectedDurationMinutes,
+                showPresets = !isSessionActive,
+                onSelectDuration = { viewModel.selectDuration(it) },
+                onEditGoal = { showGoalEditor = true },
+                onStart = {
+                    viewModel.startSession(context) { sessionId ->
+                        onNavigateToActiveSession(sessionId)
                     }
-                }
+                },
+                onViewSession = {
+                    val sessionId = when (val state = timerState) {
+                        is TimerState.ActiveLocked -> state.sessionId
+                        else -> 1L
+                    }
+                    if (sessionId > 0L) onNavigateToActiveSession(sessionId)
+                },
+                onStopSession = { showStopDialog = true },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            LockModeRow(
+                selectedTriggerType = selectedTriggerType,
+                onSelectTriggerType = { viewModel.selectTriggerType(it) },
+            )
+
+            val matchingKeys = savedTriggers.filter { it.type == selectedTriggerType }
+            if (!isSessionActive && selectedTriggerType != TriggerType.MANUAL && matchingKeys.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                SavedKeyRail(
+                    keys = matchingKeys,
+                    selectedKey = selectedTriggerProfile,
+                    onSelectKey = { viewModel.selectSavedTrigger(it) },
+                )
             }
-        }
 
-        // --- Action Buttons with Animation ---
-        AnimatedContent(
-            targetState = isSessionActive,
-            transitionSpec = { fadeIn(spring()) togetherWith fadeOut(spring()) },
-            label = "actionButtonsTransition",
-        ) { active ->
-            if (active) {
-                val activeSessionId = when (val s = timerState) {
-                    is TimerState.ActiveLocked -> s.sessionId
-                    is TimerState.GracePeriodWarning -> s.sessionId
-                    else -> 1L
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    // Resume / View Session CTA
-                    GlassButton(
-                        onClick = {
-                            if (activeSessionId > 0) {
-                                onNavigateToActiveSession(activeSessionId)
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        containerColor = MaterialTheme.colorScheme.primary,
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.PlayArrow,
-                                contentDescription = "View Session",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "View Session",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                            )
-                        }
-                    }
+            Spacer(modifier = Modifier.height(26.dp))
 
-                    // Stop Session Button
-                    GlassButton(
-                        onClick = { showStopDialog = true },
-                        modifier = Modifier.weight(1f),
-                        containerColor = AppleRed.copy(alpha = if (isDark) 0.25f else 0.12f),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Stop,
-                                contentDescription = "Stop Session",
-                                tint = AppleRed,
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Stop",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = AppleRed,
-                            )
-                        }
-                    }
-                }
-            } else {
-                // Start & Lock In CTA
-                GlassButton(
-                    onClick = {
-                        viewModel.startSession(context) { sessionId ->
-                            onNavigateToActiveSession(sessionId)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val ctaIcon = when {
-                            selectedTriggerProfile?.type == TriggerType.BARCODE -> Icons.Filled.QrCodeScanner
-                            selectedTriggerProfile?.type == TriggerType.NFC -> Icons.Filled.Contactless
-                            selectedTriggerType == TriggerType.FLIP -> Icons.Filled.ScreenRotation
-                            else -> Icons.Filled.Lock
-                        }
-                        val ctaText = when {
-                            selectedTriggerProfile != null -> "Arm ${selectedTriggerProfile!!.label}"
-                            selectedTriggerType == TriggerType.FLIP -> "Arm Flip to Lock"
-                            else -> "Start & Lock In"
-                        }
-
-                        Icon(
-                            imageVector = ctaIcon,
-                            contentDescription = "Lock In",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = ctaText,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        )
-                    }
-                }
-            }
+            WeekStrip(days = weekDays)
         }
     }
 
-    // Stop Confirmation Dialog
+    if (showGoalEditor) {
+        val goalModule = selectedModule
+        if (goalModule != null) {
+            GoalEditorDialog(
+                module = goalModule,
+                onDismiss = { showGoalEditor = false },
+                onSave = { minutes, note ->
+                    viewModel.setModuleGoal(goalModule, minutes, note)
+                    showGoalEditor = false
+                },
+            )
+        }
+    }
+
     if (showStopDialog) {
         AlertDialog(
             onDismissRequest = { showStopDialog = false },
@@ -627,13 +227,13 @@ fun FocusHubScreen(
                 Text(
                     text = "Stop Session?",
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = LockInPalette.TextPrimary,
                 )
             },
             text = {
                 Text(
                     text = "Ending the session early will cancel your current deep work timer.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = LockInPalette.TextSecondary,
                 )
             },
             confirmButton = {
@@ -643,17 +243,786 @@ fun FocusHubScreen(
                         viewModel.stopActiveSession(context)
                     },
                 ) {
-                    Text("Stop", color = AppleRed, fontWeight = FontWeight.Bold)
+                    Text("Stop", color = LockInPalette.Coral, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showStopDialog = false }) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.primary)
+                    Text("Cancel", color = LockInPalette.Cyan)
                 }
             },
-            containerColor = MaterialTheme.colorScheme.surface,
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            containerColor = LockInPalette.SheetSurface,
+            titleContentColor = LockInPalette.TextPrimary,
+            textContentColor = LockInPalette.TextSecondary,
         )
     }
+}
+
+// ============================================================================
+//  Header — "Today" + date, a bare gear, and the week ring
+// ============================================================================
+
+@Composable
+private fun HubHeader(
+    streakDays: Int,
+    goalFraction: Float,
+    hasGoal: Boolean,
+    onOpenSettings: () -> Unit,
+) {
+    val ink = LockInPalette.HeaderInk
+    val today = remember { LocalDate.now() }
+    val dateLabel = remember {
+        today.format(DateTimeFormatter.ofPattern("EEE, MMM d"))
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Today",
+                style = GlassType.Display,
+                color = ink,
+            )
+            Spacer(modifier = Modifier.height(1.dp))
+            Text(
+                text = dateLabel,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Normal,
+                color = ink.copy(alpha = 0.70f),
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(LockInPalette.SurfaceTint.copy(alpha = 0.10f))
+                .clickable(onClick = onOpenSettings),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Settings,
+                contentDescription = "Settings",
+                tint = ink.copy(alpha = 0.85f),
+                modifier = Modifier.size(16.dp),
+            )
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        WeekRing(
+            fraction = if (hasGoal) goalFraction else (streakDays / 7f).coerceIn(0f, 1f),
+            centerLabel = if (hasGoal) "${(goalFraction * 100).toInt()}%" else "${streakDays}d",
+            caption = if (hasGoal) "GOAL" else "STREAK",
+        )
+    }
+}
+
+/** Small ring that reports either this week's goal or the streak. */
+@Composable
+private fun WeekRing(
+    fraction: Float,
+    centerLabel: String,
+    caption: String,
+) {
+    val track = LockInPalette.HeaderInk.copy(alpha = 0.22f)
+    val arc = LockInPalette.HeaderInk
+    val ink = LockInPalette.HeaderInk
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(contentAlignment = Alignment.Center) {
+            Canvas(modifier = Modifier.size(46.dp)) {
+                val stroke = 2.5.dp.toPx()
+                val radius = (size.minDimension - stroke) / 2f
+                val topLeft = Offset(center.x - radius, center.y - radius)
+                val arcSize = Size(radius * 2, radius * 2)
+
+                drawCircle(
+                    color = track,
+                    radius = radius,
+                    center = center,
+                    style = Stroke(width = stroke),
+                )
+                if (fraction > 0.01f) {
+                    drawArc(
+                        color = arc,
+                        startAngle = -90f,
+                        sweepAngle = fraction * 360f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                }
+            }
+            Text(
+                text = centerLabel,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = ink,
+            )
+        }
+        Spacer(modifier = Modifier.height(3.dp))
+        Text(
+            text = caption,
+            fontSize = 7.5.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 1.1.sp,
+            color = ink.copy(alpha = 0.55f),
+        )
+    }
+}
+
+// ============================================================================
+//  Module rail
+// ============================================================================
+
+@Composable
+private fun ModuleRail(
+    modules: List<CourseModule>,
+    selectedModule: CourseModule?,
+    onSelectModule: (CourseModule) -> Unit,
+    onAddCourse: () -> Unit,
+) {
+    val ink = LockInPalette.InkButton
+    val onInk = LockInPalette.OnInkButton
+    val skyInk = LockInPalette.HeaderInk
+
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 1.dp),
+    ) {
+        items(modules, key = { it.id }) { module ->
+            val isSelected = selectedModule?.id == module.id
+            val shape = RoundedCornerShape(GlassRadius.Pill)
+
+            Row(
+                modifier = Modifier
+                    .clip(shape)
+                    .background(if (isSelected) ink else Color.White.copy(alpha = 0.26f))
+                    .border(
+                        width = 1.dp,
+                        brush = if (isSelected) {
+                            Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                        } else {
+                            Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.20f)),
+                            )
+                        },
+                        shape = shape,
+                    )
+                    .clickable { onSelectModule(module) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(5.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) onInk else skyInk),
+                )
+                Text(
+                    text = module.code,
+                    fontSize = 11.5.sp,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = if (isSelected) onInk else skyInk,
+                    maxLines = 1,
+                )
+            }
+        }
+
+        item { AddModuleChip(onClick = onAddCourse) }
+    }
+}
+
+@Composable
+private fun AddModuleChip(onClick: () -> Unit) {
+    val ink = LockInPalette.HeaderInk
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(GlassRadius.Pill))
+            .drawDashedBorder(ink.copy(alpha = 0.35f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = null,
+            tint = ink.copy(alpha = 0.85f),
+            modifier = Modifier.size(12.dp),
+        )
+        Text(
+            text = "Add",
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Medium,
+            color = ink.copy(alpha = 0.85f),
+            maxLines = 1,
+        )
+    }
+}
+
+/** Dashed 1dp outline — used only by the "add" chip. */
+private fun Modifier.drawDashedBorder(color: Color): Modifier = this.then(
+    Modifier.drawBehind {
+        drawRoundRect(
+            color = color,
+            style = Stroke(
+                width = 1.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f),
+            ),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2f, size.height / 2f),
+        )
+    },
+)
+
+// ============================================================================
+//  The focus card
+// ============================================================================
+
+@Composable
+private fun FocusCard(
+    module: CourseModule?,
+    goalMinutes: Int,
+    goalTarget: Int,
+    isSessionActive: Boolean,
+    isPaused: Boolean,
+    remainingLabel: String?,
+    endTimeLabel: String,
+    selectedDurationMinutes: Int,
+    showPresets: Boolean,
+    onSelectDuration: (Int) -> Unit,
+    onEditGoal: () -> Unit,
+    onStart: () -> Unit,
+    onViewSession: () -> Unit,
+    onStopSession: () -> Unit,
+) {
+    val accent = LockInPalette.Cyan
+
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadius = GlassRadius.Card,
+        contentPadding = 22.dp,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "TODAY'S FOCUS",
+                style = GlassType.Eyebrow,
+                color = LockInPalette.TextTertiary,
+                modifier = Modifier.weight(1f),
+            )
+            if (isSessionActive) {
+                LiveBadge(label = if (isPaused) "PAUSED" else "LIVE")
+            } else {
+                GoalChip(
+                    label = if (goalTarget > 0) "${goalMinutes}m / ${goalTarget}m" else "Set goal",
+                    onClick = onEditGoal,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Text(
+            text = module?.name ?: "Pick a module",
+            style = GlassType.CardTitle,
+            color = LockInPalette.TextPrimary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        Spacer(modifier = Modifier.height(9.dp))
+
+        Text(
+            text = when {
+                module == null -> "Choose a module above to give this session a target."
+                module.goalNote.isNotBlank() -> module.goalNote
+                goalTarget > 0 -> "Bank $goalTarget focused minutes this week."
+                else -> "Add a weekly goal so it stays in front of you while you study."
+            },
+            style = GlassType.Body,
+            color = LockInPalette.TextSecondary,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (showPresets) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(25, 50, 90).forEach { minutes ->
+                        DurationChip(
+                            minutes = minutes,
+                            selected = selectedDurationMinutes == minutes,
+                            onClick = { onSelectDuration(minutes) },
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        imageVector = if (isPaused) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(12.dp),
+                    )
+                    Text(
+                        text = if (isPaused) "Paused" else "In session",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = accent,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Text(
+                text = remainingLabel ?: endTimeLabel,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = LockInPalette.TextTertiary,
+                maxLines = 1,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (isSessionActive) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                GlassPrimaryButton(
+                    text = "View Session",
+                    onClick = onViewSession,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Filled.PlayArrow,
+                    showTrailingArrow = false,
+                )
+                GlassButton(
+                    onClick = onStopSession,
+                    modifier = Modifier.weight(0.55f),
+                    cornerRadius = GlassRadius.Pill,
+                    containerColor = LockInPalette.Coral.copy(alpha = 0.12f),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Stop,
+                            contentDescription = null,
+                            tint = LockInPalette.Coral,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Stop",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = LockInPalette.Coral,
+                        )
+                    }
+                }
+            }
+        } else {
+            GlassPrimaryButton(
+                text = "Start Session",
+                onClick = onStart,
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = when {
+                    module == null -> Icons.Filled.Add
+                    else -> Icons.Filled.PlayArrow
+                },
+                showTrailingArrow = true,
+            )
+        }
+    }
+}
+
+/** Coral status pill that reports a running session. */
+@Composable
+private fun LiveBadge(label: String) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(GlassRadius.Pill))
+            .background(LockInPalette.Coral.copy(alpha = 0.10f))
+            .padding(horizontal = 9.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(5.dp)
+                .clip(CircleShape)
+                .background(LockInPalette.Coral),
+        )
+        Text(
+            text = label,
+            fontSize = 8.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.1.sp,
+            color = LockInPalette.Coral,
+        )
+    }
+}
+
+/** Tappable goal summary that opens the goal editor. */
+@Composable
+private fun GoalChip(label: String, onClick: () -> Unit) {
+    val accent = LockInPalette.Cyan
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(GlassRadius.Pill))
+            .background(accent.copy(alpha = 0.09f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 9.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Flag,
+            contentDescription = "Edit goal",
+            tint = accent,
+            modifier = Modifier.size(10.dp),
+        )
+        Text(
+            text = label,
+            fontSize = 9.5.sp,
+            fontWeight = FontWeight.Medium,
+            color = accent,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun DurationChip(minutes: Int, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(GlassRadius.Pill)
+    val tint = LockInPalette.SurfaceTint
+    Box(
+        modifier = Modifier
+            .clip(shape)
+            .background(if (selected) tint.copy(alpha = 0.07f) else Color.Transparent)
+            .border(
+                width = 1.dp,
+                brush = if (selected) {
+                    Brush.verticalGradient(
+                        listOf(tint.copy(alpha = 0.16f), tint.copy(alpha = 0.08f)),
+                    )
+                } else {
+                    Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                },
+                shape = shape,
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text = "${minutes}m",
+            fontSize = 10.5.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            color = if (selected) LockInPalette.TextPrimary else LockInPalette.TextTertiary,
+        )
+    }
+}
+
+// ============================================================================
+//  Lock mode row — the single line under the card
+// ============================================================================
+
+@Composable
+private fun LockModeRow(
+    selectedTriggerType: TriggerType,
+    onSelectTriggerType: (TriggerType) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        Text(
+            text = "LOCK",
+            style = GlassType.Eyebrow,
+            color = LockInPalette.TextTertiary,
+        )
+
+        Spacer(modifier = Modifier.width(1.dp))
+
+        ModeChip(
+            icon = Icons.Filled.PlayArrow,
+            label = "Manual",
+            selected = selectedTriggerType == TriggerType.MANUAL,
+            onClick = { onSelectTriggerType(TriggerType.MANUAL) },
+        )
+        ModeChip(
+            icon = Icons.Filled.QrCodeScanner,
+            label = "Barcode",
+            selected = selectedTriggerType == TriggerType.BARCODE,
+            onClick = { onSelectTriggerType(TriggerType.BARCODE) },
+        )
+        ModeChip(
+            icon = Icons.Filled.Contactless,
+            label = "Card",
+            selected = selectedTriggerType == TriggerType.NFC,
+            onClick = { onSelectTriggerType(TriggerType.NFC) },
+        )
+    }
+}
+
+@Composable
+private fun ModeChip(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(GlassRadius.Pill)
+    val ink = LockInPalette.InkButton
+    val onInk = LockInPalette.OnInkButton
+
+    Row(
+        modifier = Modifier
+            .clip(shape)
+            .background(
+                if (selected) {
+                    Brush.verticalGradient(listOf(ink, ink))
+                } else {
+                    Brush.verticalGradient(
+                        listOf(
+                            LockInPalette.SurfaceTint.copy(alpha = 0.05f),
+                            LockInPalette.SurfaceTint.copy(alpha = 0.03f),
+                        ),
+                    )
+                },
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 11.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = if (selected) onInk else LockInPalette.TextTertiary,
+            modifier = Modifier.size(12.dp),
+        )
+        Text(
+            text = label,
+            fontSize = 10.5.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            color = if (selected) onInk else LockInPalette.TextSecondary,
+            maxLines = 1,
+        )
+    }
+}
+
+// ============================================================================
+//  Saved key rail (only when a physical trigger is selected)
+// ============================================================================
+
+@Composable
+private fun SavedKeyRail(
+    keys: List<TriggerProfile>,
+    selectedKey: TriggerProfile?,
+    onSelectKey: (TriggerProfile) -> Unit,
+) {
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 38.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(keys, key = { it.id }) { key ->
+            val isSelected = selectedKey?.id == key.id
+            val shape = RoundedCornerShape(GlassRadius.Pill)
+
+            Row(
+                modifier = Modifier
+                    .clip(shape)
+                    .background(
+                        if (isSelected) {
+                            LockInPalette.Cyan.copy(alpha = 0.10f)
+                        } else {
+                            Color.Transparent
+                        },
+                    )
+                    .border(
+                        width = 1.dp,
+                        brush = if (isSelected) {
+                            Brush.verticalGradient(
+                                listOf(
+                                    LockInPalette.Cyan.copy(alpha = 0.35f),
+                                    LockInPalette.Cyan.copy(alpha = 0.12f),
+                                ),
+                            )
+                        } else {
+                            Brush.verticalGradient(
+                                listOf(
+                                    LockInPalette.SurfaceTint.copy(alpha = 0.10f),
+                                    LockInPalette.SurfaceTint.copy(alpha = 0.05f),
+                                ),
+                            )
+                        },
+                        shape = shape,
+                    )
+                    .clickable { onSelectKey(key) }
+                    .padding(horizontal = 11.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected) LockInPalette.Cyan else LockInPalette.TextTertiary,
+                        ),
+                )
+                Text(
+                    text = key.label,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isSelected) LockInPalette.TextPrimary else LockInPalette.TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+// ============================================================================
+//  Seven-day strip
+// ============================================================================
+
+@Composable
+private fun WeekStrip(days: List<DayFocus>) {
+    val range = remember {
+        val today = LocalDate.now()
+        val start = today.minusDays(6)
+        val monthDay = DateTimeFormatter.ofPattern("MMM d")
+        val day = DateTimeFormatter.ofPattern("d")
+        if (start.month == today.month) {
+            "${start.format(monthDay)} – ${today.format(day)}"
+        } else {
+            "${start.format(monthDay)} – ${today.format(monthDay)}"
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "TIMELINE",
+                style = GlassType.Eyebrow,
+                color = LockInPalette.TextTertiary,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = range,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = LockInPalette.TextTertiary,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            days.forEach { day ->
+                DayColumn(day = day, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayColumn(day: DayFocus, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(16.dp)
+    val ink = LockInPalette.InkButton
+    val onInk = LockInPalette.OnInkButton
+
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .background(if (day.isToday) ink else Color.Transparent)
+            .padding(vertical = 9.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = day.letter,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (day.isToday) onInk.copy(alpha = 0.75f) else LockInPalette.TextTertiary,
+        )
+        Spacer(modifier = Modifier.height(7.dp))
+        Box(
+            modifier = Modifier
+                .size(if (day.minutes > 0) 7.dp else 6.dp)
+                .clip(CircleShape)
+                .background(
+                    when {
+                        day.isToday && day.minutes > 0 -> onInk
+                        day.minutes > 0 -> LockInPalette.Cyan
+                        day.isToday -> onInk.copy(alpha = 0.35f)
+                        else -> LockInPalette.SurfaceTint.copy(alpha = 0.14f)
+                    },
+                ),
+        )
+    }
+}
+
+// ============================================================================
+//  Formatting
+// ============================================================================
+
+private fun formatClock(remainingMs: Long): String {
+    val safeMs = remainingMs.coerceAtLeast(0L)
+    val totalSeconds = safeMs / 1000L
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+    return "%02d:%02d".format(minutes, seconds)
 }

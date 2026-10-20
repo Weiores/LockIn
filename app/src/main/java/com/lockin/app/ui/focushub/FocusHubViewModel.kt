@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lockin.app.domain.model.CourseModule
 import com.lockin.app.domain.model.FailReason
+import com.lockin.app.domain.model.SessionOutcome
+import com.lockin.app.domain.model.ThemeMode
 import com.lockin.app.domain.model.TimerState
 import com.lockin.app.domain.model.TriggerProfile
 import com.lockin.app.domain.model.TriggerType
@@ -23,15 +25,18 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @HiltViewModel
-class FocusHubViewModel @Inject constructor(
-    private val moduleRepository: ModuleRepository,
+class FocusHubViewModel @Inject constructor(    private val moduleRepository: ModuleRepository,
     private val sessionRepository: SessionRepository,
     private val triggerRepository: TriggerRepository,
     private val preferencesRepository: PreferencesRepository,
@@ -42,10 +47,53 @@ class FocusHubViewModel @Inject constructor(
 
     val timerState: StateFlow<TimerState> = timerEngine.timerState
 
-    val isDarkMode: StateFlow<Boolean?> = preferencesRepository.darkMode
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    /** Start of the current week — the window every module goal is measured over. */
+    private val zone: ZoneId = ZoneId.systemDefault()
+
+    private val weekStart: Instant = run {
+        val today = LocalDate.now(zone)
+        val daysSinceMonday = ((today.dayOfWeek.value + 6) % 7).toLong()
+        today.minusDays(daysSinceMonday).atStartOfDay(zone).toInstant()
+    }
+
+    /** Start of the seven-day window shown in the hub's timeline strip. */
+    private val weekStripStart: Instant =
+        LocalDate.now(zone).minusDays(6).atStartOfDay(zone).toInstant()
 
     val modules: StateFlow<List<CourseModule>> = moduleRepository.observeActiveModules()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Completed focus minutes per module for the current week. */
+    val weeklyFocusByModule: StateFlow<Map<Long, Int>> = sessionRepository
+        .observeSessionsSince(weekStart)
+        .map { sessions ->
+            sessions
+                .filter { it.outcome == SessionOutcome.COMPLETED && it.moduleId != null }
+                .groupBy { it.moduleId!! }
+                .mapValues { (_, list) -> (list.sumOf { it.actualDurationMs } / 60_000L).toInt() }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    /** One column per day for the hub's seven-day strip, oldest first. */
+    val lastSevenDays: StateFlow<List<DayFocus>> = sessionRepository
+        .observeSessionsSince(weekStripStart)
+        .map { sessions ->
+            val minutesByDay = sessions
+                .filter { it.outcome == SessionOutcome.COMPLETED }
+                .groupBy { it.startTime.atZone(zone).toLocalDate() }
+                .mapValues { (_, list) -> (list.sumOf { it.actualDurationMs } / 60_000L).toInt() }
+
+            val today = LocalDate.now(zone)
+            (6 downTo 0).map { daysBack ->
+                val date = today.minusDays(daysBack.toLong())
+                DayFocus(
+                    letter = date.dayOfWeek.name.take(1),
+                    dayOfMonth = date.dayOfMonth,
+                    minutes = minutesByDay[date] ?: 0,
+                    isToday = daysBack == 0,
+                )
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val savedTriggers: StateFlow<List<TriggerProfile>> = triggerRepository.observeAll()
@@ -80,6 +128,17 @@ class FocusHubViewModel @Inject constructor(
     init {
         seedInitialModulesIfEmpty()
         calculateStreak()
+        preselectFirstModule()
+    }
+
+    /** Start on the first module so the goal strip is visible without a tap. */
+    private fun preselectFirstModule() {
+        viewModelScope.launch {
+            val first = modules.first { it.isNotEmpty() }.firstOrNull() ?: return@launch
+            if (_selectedModule.value == null) {
+                _selectedModule.value = first
+            }
+        }
     }
 
     private fun seedInitialModulesIfEmpty() {
@@ -109,7 +168,19 @@ class FocusHubViewModel @Inject constructor(
 
     fun toggleDarkMode(currentDark: Boolean) {
         viewModelScope.launch {
-            preferencesRepository.setDarkMode(!currentDark)
+            preferencesRepository.setThemeMode(if (currentDark) ThemeMode.LIGHT else ThemeMode.DARK)
+        }
+    }
+
+    /** Persist the weekly intention for a module. */
+    fun setModuleGoal(module: CourseModule, goalMinutes: Int, goalNote: String) {
+        viewModelScope.launch {
+            moduleRepository.update(
+                module.copy(
+                    weeklyGoalMinutes = goalMinutes.coerceAtLeast(0),
+                    goalNote = goalNote.trim(),
+                ),
+            )
         }
     }
 
@@ -172,3 +243,11 @@ class FocusHubViewModel @Inject constructor(
         timerEngine.resetToIdle()
     }
 }
+
+/** One column of the hub's seven-day strip. */
+data class DayFocus(
+    val letter: String,
+    val dayOfMonth: Int,
+    val minutes: Int,
+    val isToday: Boolean,
+)

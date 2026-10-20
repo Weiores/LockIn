@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,14 +59,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.lockin.app.domain.model.AccentScheme
+import com.lockin.app.domain.model.ThemeMode
 import com.lockin.app.domain.model.TriggerProfile
 import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.components.GlassCard
+import com.lockin.app.ui.components.GlassPill
 import com.lockin.app.ui.theme.AppleBlue
 import com.lockin.app.ui.theme.AppleGreen
 import com.lockin.app.ui.theme.AppleOrange
 import com.lockin.app.ui.theme.AppleRed
+import com.lockin.app.ui.theme.GlassTokens
 import com.lockin.app.ui.theme.LocalDarkTheme
+import com.lockin.app.ui.theme.lockInColors
 
 @Composable
 fun SettingsScreen(
@@ -76,11 +82,12 @@ fun SettingsScreen(
 
     val defaultDuration by viewModel.defaultDurationMinutes.collectAsState()
     val defaultBreak by viewModel.defaultBreakMinutes.collectAsState()
-    val graceCountdown by viewModel.graceCountdownSeconds.collectAsState()
     val vibrationEnabled by viewModel.vibrationEnabled.collectAsState()
     val blacklistedPackages by viewModel.blacklistedPackages.collectAsState()
     val currentWifi by viewModel.currentWifi.collectAsState()
     val savedWifiZones by viewModel.savedWifiZones.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsState()
+    val accentScheme by viewModel.accentScheme.collectAsState()
 
     var showAddWifiDialog by remember { mutableStateOf(false) }
     var wifiZoneLabelInput by remember { mutableStateOf("") }
@@ -101,7 +108,7 @@ fun SettingsScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(GlassTokens.Canvas)
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
@@ -136,6 +143,98 @@ fun SettingsScreen(
                         )
                         Text(
                             text = "Distraction Guard & Hardware Preferences",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+
+        // --- SECTION 0: APPEARANCE ---
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "APPEARANCE",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.1.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 2.dp),
+                )
+
+                GlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "Theme",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ThemeMode.entries.forEach { mode ->
+                                    val selected = mode == themeMode
+                                    GlassPill(
+                                        selected = selected,
+                                        accent = MaterialTheme.colorScheme.primary,
+                                        onClick = { viewModel.setThemeMode(mode) },
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp),
+                                    ) {
+                                        Text(
+                                            text = mode.label,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                                            color = if (selected) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "Accent",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AccentScheme.entries.forEach { scheme ->
+                                    val selected = scheme == accentScheme
+                                    GlassPill(
+                                        selected = selected,
+                                        accent = MaterialTheme.colorScheme.primary,
+                                        onClick = { viewModel.setAccentScheme(scheme) },
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(9.dp)
+                                                .clip(CircleShape)
+                                                .background(schemePreview(scheme, isDark)),
+                                        )
+                                        Text(
+                                            text = scheme.label,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                                            color = if (selected) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Text(
+                            text = "Muted tones only — every scheme keeps the glass calm instead of glowing.",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -447,37 +546,6 @@ fun SettingsScreen(
                             }
                         }
 
-                        // Grace Countdown Selector
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(
-                                text = "Flip Grace Warning Duration",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf(5, 10, 15).forEach { secs ->
-                                    val isSelected = graceCountdown == secs
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(
-                                                if (isSelected) AppleOrange else if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f),
-                                            )
-                                            .clickable { viewModel.setGraceCountdown(secs) }
-                                            .padding(horizontal = 16.dp, vertical = 7.dp),
-                                    ) {
-                                        Text(
-                                            text = "${secs}s",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
                         // Vibration Toggle
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -492,7 +560,7 @@ fun SettingsScreen(
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
-                                    text = "Vibrations on lock, posture lift, and unlock",
+                                    text = "Vibrations on lock and unlock",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -533,8 +601,7 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
+                    )                }
             }
         }
     }
@@ -680,4 +747,8 @@ fun SettingsScreen(
         )
     }
 }
+
+/** The accent a scheme would produce right now — used for the swatch dots. */
+private fun schemePreview(scheme: AccentScheme, isDark: Boolean) =
+    lockInColors(scheme, isDark).accent
 

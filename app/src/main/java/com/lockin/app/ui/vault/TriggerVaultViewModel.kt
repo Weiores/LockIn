@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.lockin.app.domain.model.TriggerProfile
 import com.lockin.app.domain.model.TriggerType
 import com.lockin.app.domain.repository.TriggerRepository
-import com.lockin.app.hardware.flip.FlipDetector
 import com.lockin.app.hardware.haptics.HapticFeedbackHelper
 import com.lockin.app.hardware.nfc.NfcCardReader
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +21,6 @@ import javax.inject.Inject
 @HiltViewModel
 class TriggerVaultViewModel @Inject constructor(
     private val triggerRepository: TriggerRepository,
-    private val flipDetector: FlipDetector,
     private val nfcCardReader: NfcCardReader,
     private val hapticFeedbackHelper: HapticFeedbackHelper,
 ) : ViewModel() {
@@ -30,12 +28,8 @@ class TriggerVaultViewModel @Inject constructor(
     val triggers: StateFlow<List<TriggerProfile>> = triggerRepository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val flipState: StateFlow<FlipDetector.FlipState> = flipDetector.observeFlipState()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FlipDetector.FlipState.Unknown)
-
     val isNfcSupported: Boolean = nfcCardReader.isSupported
     val isNfcEnabled: Boolean = nfcCardReader.isEnabled
-    val isFlipSupported: Boolean = flipDetector.isSupported
 
     private var nfcJob: Job? = null
     private val _scannedCardUid = MutableStateFlow<String?>(null)
@@ -58,22 +52,28 @@ class TriggerVaultViewModel @Inject constructor(
         _scannedCardUid.value = null
     }
 
+    /** Confirmation pulse after a successful barcode read. */
+    fun playSuccessHaptic() {
+        hapticFeedbackHelper.performLockSuccessHaptic()
+    }
+
     fun saveTrigger(
         type: TriggerType,
         label: String,
         value: String,
         isStrict: Boolean = false,
+        autoPrompt: Boolean = false,
     ) {
         viewModelScope.launch {
             triggerRepository.insert(
                 TriggerProfile(
                     type = type,
-                    label = label.ifBlank { "Physical Key" },
+                    label = label,
                     value = value,
                     isStrict = isStrict,
+                    autoPrompt = autoPrompt,
                 ),
             )
-            hapticFeedbackHelper.performLockSuccessHaptic()
         }
     }
 
@@ -82,9 +82,4 @@ class TriggerVaultViewModel @Inject constructor(
             triggerRepository.delete(trigger)
         }
     }
-
-    fun playSuccessHaptic() {
-        hapticFeedbackHelper.performLockSuccessHaptic()
-    }
 }
-

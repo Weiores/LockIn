@@ -55,4 +55,6 @@ google-services.json
 # OS-specific files
 .DS_Store
 Thumbs.db
+.workbuddy-ai/
+
 

@@ -10,6 +10,8 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.lockin.app.domain.model.AccentScheme
+import com.lockin.app.domain.model.ThemeMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -25,13 +27,14 @@ class UserPreferencesDataStore @Inject constructor(
     private object Keys {
         val DEFAULT_DURATION_MINUTES = intPreferencesKey("default_duration_minutes")
         val DEFAULT_BREAK_MINUTES = intPreferencesKey("default_break_minutes")
-        val ENABLE_FLIP_TRIGGER = booleanPreferencesKey("enable_flip_trigger")
         val ENABLE_WIFI_AUTO_PROMPT = booleanPreferencesKey("enable_wifi_auto_prompt")
         val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
         val SOUND_ENABLED = booleanPreferencesKey("sound_enabled")
-        val GRACE_COUNTDOWN_SECONDS = intPreferencesKey("grace_countdown_seconds")
         val BLACKLISTED_PACKAGES = stringSetPreferencesKey("blacklisted_packages")
-        val DARK_MODE = booleanPreferencesKey("dark_mode")
+
+        // Appearance
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val ACCENT_SCHEME = stringPreferencesKey("accent_scheme")
 
         // Active timer snapshot for crash recovery
         val ACTIVE_SESSION_ID = longPreferencesKey("active_session_id")
@@ -59,10 +62,6 @@ class UserPreferencesDataStore @Inject constructor(
         prefs[Keys.DEFAULT_BREAK_MINUTES] ?: 5
     }
 
-    val flipTriggerEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[Keys.ENABLE_FLIP_TRIGGER] ?: true
-    }
-
     val wifiAutoPromptEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[Keys.ENABLE_WIFI_AUTO_PROMPT] ?: true
     }
@@ -75,26 +74,32 @@ class UserPreferencesDataStore @Inject constructor(
         prefs[Keys.SOUND_ENABLED] ?: true
     }
 
-    val graceCountdownSeconds: Flow<Int> = context.dataStore.data.map { prefs ->
-        prefs[Keys.GRACE_COUNTDOWN_SECONDS] ?: 10
-    }
-
     val blacklistedPackages: Flow<Set<String>> = context.dataStore.data.map { prefs ->
         prefs[Keys.BLACKLISTED_PACKAGES] ?: defaultBlacklist
     }
 
-    val darkMode: Flow<Boolean?> = context.dataStore.data.map { prefs ->
-        prefs[Keys.DARK_MODE]
+    val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
+        when (prefs[Keys.THEME_MODE]) {
+            ThemeMode.LIGHT.name -> ThemeMode.LIGHT
+            ThemeMode.DARK.name -> ThemeMode.DARK
+            else -> ThemeMode.SYSTEM
+        }
     }
 
-    suspend fun setDarkMode(isDark: Boolean?) {
-        context.dataStore.edit { prefs ->
-            if (isDark == null) {
-                prefs.remove(Keys.DARK_MODE)
-            } else {
-                prefs[Keys.DARK_MODE] = isDark
-            }
+    val accentScheme: Flow<AccentScheme> = context.dataStore.data.map { prefs ->
+        when (prefs[Keys.ACCENT_SCHEME]) {
+            AccentScheme.GREEN.name -> AccentScheme.GREEN
+            AccentScheme.RED.name -> AccentScheme.RED
+            else -> AccentScheme.BLUE
         }
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { it[Keys.THEME_MODE] = mode.name }
+    }
+
+    suspend fun setAccentScheme(scheme: AccentScheme) {
+        context.dataStore.edit { it[Keys.ACCENT_SCHEME] = scheme.name }
     }
 
     suspend fun setDefaultDuration(minutes: Int) {
@@ -103,10 +108,6 @@ class UserPreferencesDataStore @Inject constructor(
 
     suspend fun setDefaultBreak(minutes: Int) {
         context.dataStore.edit { it[Keys.DEFAULT_BREAK_MINUTES] = minutes }
-    }
-
-    suspend fun setFlipTriggerEnabled(enabled: Boolean) {
-        context.dataStore.edit { it[Keys.ENABLE_FLIP_TRIGGER] = enabled }
     }
 
     suspend fun setWifiAutoPromptEnabled(enabled: Boolean) {
@@ -119,10 +120,6 @@ class UserPreferencesDataStore @Inject constructor(
 
     suspend fun setSoundEnabled(enabled: Boolean) {
         context.dataStore.edit { it[Keys.SOUND_ENABLED] = enabled }
-    }
-
-    suspend fun setGraceCountdownSeconds(seconds: Int) {
-        context.dataStore.edit { it[Keys.GRACE_COUNTDOWN_SECONDS] = seconds }
     }
 
     suspend fun setBlacklistedPackages(packages: Set<String>) {

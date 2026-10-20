@@ -67,6 +67,15 @@ class DistractionGuard @Inject constructor(
     }
 
     /**
+     * Synchronised read of the foreground package. Used by the distraction guard
+     * while it counts down its grace window, where several reads must agree with
+     * each other even though they come from a different coroutine.
+     */
+    @Synchronized
+    fun readForegroundPackageName(): String? =
+        if (hasUsageStatsPermission()) getForegroundPackageName() else null
+
+    /**
      * Periodically polls the foreground application package at the given [pollIntervalMs].
      */
     fun observeForegroundApp(pollIntervalMs: Long = 1500L): Flow<String?> = flow {

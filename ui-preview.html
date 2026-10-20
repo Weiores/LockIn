@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LockIn — Today</title>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#D3D6DD;
+    color:#0B1526;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------------------------------------------------------------- tokens */
+  body[data-mode="light"]{
+    --sky:#6E9CB6; --sky2:#A9C2D3; --mid:#DCE5EF; --paper:#FBFCFE;
+    --card:#FFFFFF; --card2:#F6F8FC;
+    --ink:#0B1526; --ink2:#5C6A7E; --ink3:#7B8598;
+    --btn:#0B1526; --on-btn:#FFFFFF; --hdr:#FFFFFF;
+    --hair:rgba(11,21,38,.08); --hair2:rgba(11,21,38,.05);
+    --shadow:0 18px 34px -18px rgba(11,21,38,.30), 0 2px 8px rgba(11,21,38,.05);
+  }
+  body[data-mode="dark"]{
+    --sky:#06080E; --sky2:#131C2C; --mid:#0A1220; --paper:#101A2C;
+    --card:#161E2D; --card2:#0F1622;
+    --ink:#EEF3FB; --ink2:#A9B5C6; --ink3:#8B97A9;
+    --btn:#EDF2FA; --on-btn:#0B1526; --hdr:#F4F8FF;
+    --hair:rgba(255,255,255,.08); --hair2:rgba(255,255,255,.05);
+    --shadow:0 18px 34px -18px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.35);
+  }
+  /* accents — light */
+  body[data-mode="light"][data-accent="blue"]{--accent:#3E6DF3;--accent-soft:#7C9BFA;--accent-deep:#2748C4;}
+  body[data-mode="light"][data-accent="green"]{--accent:#2E9E77;--accent-soft:#68C4A2;--accent-deep:#1F7657;--sky:#6E9A8B;--sky2:#A9C4B8;}
+  body[data-mode="light"][data-accent="red"]{--accent:#DC4B52;--accent-soft:#EE868B;--accent-deep:#A82F36;--sky:#9C8187;--sky2:#C9B6B9;}
+  /* accents — dark */
+  body[data-mode="dark"][data-accent="blue"]{--accent:#6F93FF;--accent-soft:#9DB4FF;--accent-deep:#3E6DF3;}
+  body[data-mode="dark"][data-accent="green"]{--accent:#5CC49A;--accent-soft:#8FD9BB;--accent-deep:#2E9E77;}
+  body[data-mode="dark"][data-accent="red"]{--accent:#F06A70;--accent-soft:#F79BA0;--accent-deep:#C43F46;}
+
+  :root{--coral:#DC4B52;--mint:#2E9E77;--amber:#B47C1E;--violet:#6B5CE0;}
+
+  /* ------------------------------------------------------------- board head */
+  .board{min-height:100vh;padding:34px 30px 44px;}
+  .board-head{max-width:1180px;margin:0 auto 26px;display:flex;justify-content:space-between;
+    align-items:flex-end;gap:24px;flex-wrap:wrap;}
+  .board-head h1{margin:0 0 6px;font-size:22px;font-weight:600;letter-spacing:-.4px;color:#0B1526;}
+  .board-head p{margin:0;max-width:520px;font-size:12.5px;line-height:1.6;color:#4C5566;}
+  .controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+  .ctrl{display:flex;flex-direction:column;gap:6px;}
+  .ctrl .lbl{font-size:8.5px;letter-spacing:1.3px;font-weight:600;color:#6B7382;}
+  .seg{display:flex;background:#fff;border-radius:999px;padding:3px;
+    box-shadow:0 1px 3px rgba(11,21,38,.14);}
+  .seg button{border:0;background:transparent;font:inherit;font-size:11px;font-weight:500;
+    color:#5C6A7E;padding:6px 14px;border-radius:999px;cursor:pointer;}
+  .seg button.on{background:#0B1526;color:#fff;font-weight:600;}
+  .swatches{padding:5px 6px;gap:6px;}
+  .sw{width:20px;height:20px;border-radius:50%;border:0;cursor:pointer;
+    box-shadow:inset 0 0 0 1px rgba(11,21,38,.12);}
+  .sw.blue{background:#3E6DF3;} .sw.green{background:#2E9E77;} .sw.red{background:#DC4B52;}
+  .sw.on{box-shadow:0 0 0 2px #fff,0 0 0 4px #0B1526;}
+
+  /* ------------------------------------------------------------------ phone */
+  .rail{display:flex;gap:34px;justify-content:center;align-items:flex-start;flex-wrap:wrap;}
+  .phone{width:302px;height:640px;border-radius:44px;background:#0B1526;padding:9px;color:var(--ink);
+    box-shadow:0 26px 60px -24px rgba(11,21,38,.55),0 2px 6px rgba(11,21,38,.18);flex:none;}
+  .screen{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;
+    display:flex;flex-direction:column;
+    background:linear-gradient(180deg,var(--sky) 0%,color-mix(in srgb,var(--sky) 55%,var(--sky2)) 13%,
+      var(--sky2) 22%,var(--mid) 42%,color-mix(in srgb,var(--mid) 60%,var(--paper)) 62%,var(--paper) 100%);}
+  .screen::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 60% at 82% 0%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 62%);}
+  .scroll{position:relative;flex:1;overflow:hidden;padding:14px 20px 8px;display:flex;
+    flex-direction:column;}
+
+  /* --------------------------------------------------------------- header */
+  .hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-top:6px;}
+  .hdr h1{margin:0;font-size:31px;line-height:1.06;font-weight:400;letter-spacing:-1.3px;color:var(--hdr);}
+  .hdr p{margin:3px 0 0;font-size:12px;color:color-mix(in srgb,var(--hdr) 72%,transparent);}
+  .hdr-right{display:flex;align-items:center;gap:9px;}
+  .gear{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--hdr) 16%,transparent);
+    color:color-mix(in srgb,var(--hdr) 88%,transparent);}
+  .ringwrap{display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .ring{position:relative;width:44px;height:44px;}
+  .ring .pct{position:absolute;inset:0;display:grid;place-items:center;font-size:10.5px;
+    font-weight:600;color:var(--hdr);}
+  .ringwrap .cap{font-size:7px;letter-spacing:1.1px;font-weight:600;
+    color:color-mix(in srgb,var(--hdr) 55%,transparent);}
+
+  /* ---------------------------------------------------------------- chips */
+  .chips{display:flex;gap:7px;margin-top:18px;flex-wrap:nowrap;}
+  .chip{display:flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;
+    font-size:11.5px;font-weight:500;color:var(--hdr);
+    background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.42);
+    white-space:nowrap;}
+  body[data-mode="dark"] .chip:not(.on){background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);}
+  .chip i{width:5px;height:5px;border-radius:50%;background:currentColor;display:block;}
+  .chip.on{background:var(--btn);color:var(--on-btn);border-color:transparent;font-weight:600;}
+  .chip.dash{background:transparent;border-style:dashed;border-color:color-mix(in srgb,var(--hdr) 38%,transparent);}
+
+  /* ----------------------------------------------------------------- card */
+  .card{background:var(--card);border-radius:28px;box-shadow:var(--shadow);
+    border:1px solid var(--hair2);padding:20px;margin-top:14px;}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .eyebrow{font-size:8.5px;letter-spacing:1.5px;font-weight:600;color:var(--ink3);}
+  .goalchip{display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;
+    background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--accent);
+    font-size:9.5px;font-weight:600;}
+  .card h2{margin:13px 0 0;font-size:21.5px;line-height:1.16;letter-spacing:-.6px;
+    font-weight:600;color:var(--ink);}
+  .body{margin:8px 0 0;font-size:11.5px;line-height:1.55;color:var(--ink2);}
+  .meta{display:flex;align-items:center;justify-content:space-between;margin-top:16px;}
+  .durs{display:flex;gap:5px;}
+  .dur{padding:5px 11px;border-radius:999px;font-size:10px;font-weight:500;color:var(--ink3);}
+  .dur.on{color:var(--ink);font-weight:600;background:color-mix(in srgb,var(--ink) 6%,transparent);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 12%,transparent);}
+  .ends{font-size:9.5px;font-weight:500;color:var(--ink3);}
+  .cta{margin-top:14px;height:48px;border-radius:999px;background:var(--btn);color:var(--on-btn);
+    display:flex;align-items:center;justify-content:center;gap:9px;font-size:13.5px;font-weight:600;
+    box-shadow:0 10px 22px -12px rgba(11,21,38,.55);}
+  .cta svg{width:15px;height:15px;}
+  .live{display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;
+    background:color-mix(in srgb,var(--coral) 10%,transparent);color:var(--coral);
+    font-size:8px;font-weight:700;letter-spacing:1.1px;}
+  .live i{width:5px;height:5px;border-radius:50%;background:var(--coral);}
+
+  /* ------------------------------------------------------------ lock row */
+  .lockrow{display:flex;align-items:center;gap:6px;margin-top:15px;padding:0 2px;}
+  .mchip{display:flex;align-items:center;gap:5px;padding:7px 10px;border-radius:999px;
+    font-size:10px;font-weight:500;color:var(--ink2);
+    background:color-mix(in srgb,var(--ink) 5%,transparent);}
+  .mchip svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.9;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .mchip.on{background:var(--btn);color:var(--on-btn);font-weight:600;}
+
+  /* ------------------------------------------------------------ timeline */
+  .tl{margin-top:22px;}
+  .tl-head{display:flex;align-items:center;justify-content:space-between;}
+  .tl-head .r{font-size:9.5px;font-weight:500;color:var(--ink3);}
+  .days{display:flex;gap:6px;margin-top:10px;}
+  .day{flex:1;border-radius:14px;padding:8px 0;display:flex;flex-direction:column;
+    align-items:center;gap:6px;}
+  .day span{font-size:9.5px;font-weight:500;color:var(--ink3);}
+  .day i{width:6px;height:6px;border-radius:50%;background:color-mix(in srgb,var(--ink) 14%,transparent);}
+  .day.done i{width:7px;height:7px;background:var(--accent);}
+  .day.today{background:var(--btn);}
+  .day.today span{color:color-mix(in srgb,var(--on-btn) 78%,transparent);}
+  .day.today i{background:var(--on-btn);}
+
+  /* ------------------------------------------------------------------ nav */
+  .nav{position:relative;margin:8px 14px 12px;background:var(--card);border-radius:26px;
+    padding:5px;display:flex;box-shadow:var(--shadow);border:1px solid var(--hair2);}
+  .nav .item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:8px 0;border-radius:16px;color:var(--ink3);font-size:9px;font-weight:500;}
+  .nav .item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .nav .item.on{background:var(--btn);color:var(--on-btn);font-weight:600;}
+
+  /* --------------------------------------------------------- locked screen */
+  .locked{flex:1;display:flex;flex-direction:column;align-items:center;
+    justify-content:space-between;padding:6px 0 2px;}
+  .locked .status{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:1.5px;
+    font-weight:600;color:color-mix(in srgb,var(--hdr) 85%,transparent);}
+  .locked .status i{width:5px;height:5px;border-radius:50%;background:var(--mint);}
+  .dial{position:relative;width:250px;height:250px;margin-top:2px;}
+  .dial .center{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;}
+  .dial .time{font-size:50px;font-weight:300;letter-spacing:-2.4px;color:var(--ink);
+    font-variant-numeric:tabular-nums;}
+  .pillrow{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;
+    background:color-mix(in srgb,var(--ink) 5%,transparent);font-size:11px;color:var(--ink2);}
+  .pillrow i{width:4px;height:4px;border-radius:50%;background:var(--accent);}
+  .ghost{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;
+    background:color-mix(in srgb,var(--ink) 5%,transparent);font-size:10.5px;font-weight:500;
+    color:var(--ink2);}
+  .ghost svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .unlock{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+    border-radius:20px;background:var(--card);box-shadow:var(--shadow);border:1px solid var(--hair2);}
+  .unlock .l{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:500;color:var(--ink2);}
+  .unlock .l svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;}
+
+  /* ---------------------------------------------------------------- vault */
+  .page-title{font-size:27px;font-weight:400;letter-spacing:-1px;color:var(--hdr);margin:4px 0 0;}
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
+  .skybtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+    background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.42);color:var(--hdr);}
+  body[data-mode="dark"] .skybtn{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);}
+  .skybtn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .sechead{display:flex;align-items:center;justify-content:space-between;margin:20px 2px 2px;}
+  .sechead .t{font-size:14px;font-weight:600;color:var(--ink);}
+  .badge{font-size:8px;letter-spacing:1.2px;font-weight:600;
+    color:color-mix(in srgb,var(--hdr) 85%,transparent);
+    background:color-mix(in srgb,var(--hdr) 16%,transparent);padding:4px 8px;border-radius:999px;}
+  .keyrow{display:flex;align-items:center;gap:12px;padding:14px;border-radius:20px;
+    background:var(--card);box-shadow:var(--shadow);border:1px solid var(--hair2);margin-top:10px;}
+  .kicon{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;}
+  .kicon svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .keyrow .mid{flex:1;}
+  .keyrow .name{font-size:12px;font-weight:600;color:var(--ink);}
+  .keyrow .st{font-size:9.5px;color:var(--ink3);margin-top:2px;display:flex;align-items:center;gap:5px;}
+  .keyrow .st i{width:4px;height:4px;border-radius:50%;background:var(--mint);}
+  .switch{width:34px;height:20px;border-radius:999px;background:var(--mint);position:relative;}
+  .switch i{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#fff;}
+  .register{margin-top:12px;padding:13px;border-radius:999px;text-align:center;font-size:11.5px;
+    font-weight:600;color:var(--ink2);border:1px dashed var(--hair);}
+  .note{margin-top:14px;padding:0 2px;font-size:9.5px;line-height:1.6;color:var(--ink3);}
+
+  /* ------------------------------------------------------------- analytics */
+  .metrics{display:flex;gap:8px;margin-top:16px;}
+  .metric{flex:1;background:var(--card);border-radius:20px;padding:12px;
+    box-shadow:var(--shadow);border:1px solid var(--hair2);}
+  .metric .v{font-size:17px;font-weight:600;letter-spacing:-.4px;color:var(--ink);}
+  .metric .l{font-size:9px;color:var(--ink3);margin-top:3px;}
+  .metric .s{font-size:8.5px;font-weight:600;margin-top:5px;}
+  .chart{margin-top:12px;}
+  .bars{display:flex;align-items:flex-end;gap:7px;height:84px;margin-top:12px;}
+  .bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;
+    justify-content:flex-end;}
+  .bcol .b{width:100%;border-radius:6px;background:color-mix(in srgb,var(--accent) 22%,transparent);}
+  .bcol.on .b{background:linear-gradient(180deg,var(--accent),color-mix(in srgb,var(--accent) 45%,transparent));}
+  .bcol .d{font-size:8px;color:var(--ink3);font-weight:500;}
+  .bcol.on .d{color:var(--ink);font-weight:600;}
+  .heat{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin-top:12px;}
+  .heat i{aspect-ratio:1;border-radius:3px;display:block;}
+  .courserow{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--ink2);margin-top:10px;}
+  .courserow .val{margin-left:auto;font-weight:600;color:var(--ink);}
+  .dot{width:6px;height:6px;border-radius:50%;display:block;}
+
+  /* --------------------------------------------------------------- notes */
+  .wkhdr{display:flex;align-items:center;justify-content:space-between;}
+  .wkhdr .date{font-size:12.5px;color:color-mix(in srgb,var(--hdr) 70%,transparent);margin-top:2px;}
+  .wkhdr .navbtns{display:flex;gap:9px;}
+  .wkbtn{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--ink) 10%,transparent);}
+  body[data-mode="dark"] .wkbtn{background:rgba(255,255,255,.10);}
+  .wkbtn svg{width:15px;height:15px;stroke:color-mix(in srgb,var(--hdr) 88%,transparent);fill:none;
+    stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  .weeksum{font-size:9.5px;line-height:1.55;color:color-mix(in srgb,var(--hdr) 58%,transparent);margin-top:7px;}
+  .progwrap{margin-top:10px;}
+  .prog{height:6px;border-radius:3px;background:color-mix(in srgb,var(--ink) 8%,transparent);}
+  body[data-mode="dark"] .prog{background:rgba(255,255,255,.10);}
+  .prog i{display:block;height:6px;border-radius:3px;background:var(--accent);}
+  .goalrow{display:flex;align-items:center;gap:11px;padding:7px 0;}
+  .gcheck{width:22px;height:22px;border-radius:8px;flex:none;display:grid;place-items:center;
+    border:1.5px solid color-mix(in srgb,var(--ink) 18%,transparent);}
+  body[data-mode="dark"] .gcheck{border-color:rgba(255,255,255,.18);}
+  .gcheck.on{background:var(--accent);border-color:var(--accent);}
+  .gcheck svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.6;
+    stroke-linecap:round;stroke-linejoin:round;display:none;}
+  .gcheck.on svg{display:block;}
+  .goalrow .gt{font-size:12px;line-height:1.45;color:var(--ink);flex:1;}
+  .goalrow.done .gt{color:var(--ink3);text-decoration:line-through;}
+  .goalrow .gdel{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;flex:none;
+    background:none;border:none;}
+  .goalrow .gdel svg{width:12px;height:12px;stroke:var(--ink3);fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .addgoal{display:flex;align-items:center;gap:9px;margin-top:8px;}
+  .addgoal .field{flex:1;height:38px;border-radius:11px;background:color-mix(in srgb,var(--ink) 4%,transparent);
+    display:flex;align-items:center;padding:0 12px;font-size:12px;color:var(--ink3);}
+  body[data-mode="dark"] .addgoal .field{background:rgba(255,255,255,.06);}
+  .addgoal .plus{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--accent) 14%,transparent);}
+  .addgoal .plus svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2.4;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .notecard{background:var(--card);border-radius:22px;padding:12px 14px;box-shadow:var(--shadow);
+    border:1px solid var(--hair2);margin-top:10px;}
+  .notecard .nb{font-size:12px;line-height:1.5;color:var(--ink);}
+  .notecard .nf{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:8.5px;
+    letter-spacing:1.2px;font-weight:600;color:var(--ink3);}
+  .notecard .nf i{width:10px;height:10px;border-radius:3px;background:color-mix(in srgb,var(--ink) 8%,transparent);}
+  body[data-mode="dark"] .notecard .nf i{background:rgba(255,255,255,.10);}
+  .addnote{margin-top:10px;padding:13px;border-radius:22px;text-align:center;font-size:11.5px;
+    font-weight:600;color:var(--ink2);border:1px dashed var(--hair);
+    background:color-mix(in srgb,var(--ink) 4%,transparent);}
+  body[data-mode="dark"] .addnote{background:rgba(255,255,255,.04);}
+  .carry{margin-top:10px;padding:9px 13px;border-radius:999px;font-size:10.5px;font-weight:600;
+    color:var(--amber);background:color-mix(in srgb,var(--amber) 12%,transparent);
+    border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);}
+
+  /* ------------------------------------------------------------- scanner */
+  .scanner{position:absolute;inset:0;background:#05080F;display:flex;flex-direction:column;}
+  body[data-mode="dark"] .scanner{background:#05080F;}
+  .scanner .sbar{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 20px 0;}
+  .scanner .sbar h3{font-size:23px;font-weight:600;letter-spacing:-.6px;color:#fff;}
+  .scanner .sbar p{font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;}
+  .sclose{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);}
+  .sclose svg{width:15px;height:15px;stroke:#fff;stroke-width:2;stroke-linecap:round;}
+  .dead{flex:1;position:relative;overflow:hidden;}
+  .dead .feed{position:absolute;inset:0;background:
+    repeating-linear-gradient(115deg,rgba(255,255,255,.045) 0 2px,transparent 2px 11px),
+    radial-gradient(120% 70% at 78% 14%,rgba(120,160,220,.34),transparent 60%),
+    linear-gradient(160deg,#1B2434,#0A0F17 62%);}
+  .dead .shade{position:absolute;inset:0;background:linear-gradient(180deg,
+    rgba(5,8,15,.72) 0%,rgba(5,8,15,.35) 40%,rgba(5,8,15,.9) 100%);}
+  .viwe{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:236px;height:236px;}
+  .viwe .c{position:absolute;width:44px;height:44px;border:3px solid var(--accent);}
+  .viwe .c1{left:0;top:0;border-right:none;border-bottom:none;border-radius:10px 0 0 0;}
+  .viwe .c2{right:0;top:0;border-left:none;border-bottom:none;border-radius:0 10px 0 0;}
+  .viwe .c3{left:0;bottom:0;border-right:none;border-top:none;border-radius:0 0 0 10px;}
+  .viwe .c4{right:0;bottom:0;border-left:none;border-top:none;border-radius:0 0 10px 0;}
+  .viwe .laser{position:absolute;left:8px;right:8px;height:2.5px;border-radius:2px;
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 78%,transparent),#fff,
+      color-mix(in srgb,var(--accent) 78%,transparent),transparent);animation:sweep 2.6s ease-in-out infinite;}
+  @keyframes sweep{0%,100%{top:12px}50%{top:222px}}
+  .scanner .sfoot{padding:0 20px 28px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+  .scanner .hint{font-size:11.5px;line-height:1.65;color:rgba(255,255,255,.76);text-align:center;}
+  .ghost2{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.86);
+    font-size:11px;font-weight:600;}
+  .ghost2 svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.9;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .radar{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);
+    width:264px;height:264px;display:grid;place-items:center;}
+  .radar .ring{position:absolute;width:264px;height:264px;border-radius:50%;
+    border:1.5px solid var(--accent);opacity:.28;animation:sonar 2.6s ease-out infinite;}
+  .radar .ring:nth-child(2){animation-delay:.87s}
+  .radar .ring:nth-child(3){animation-delay:1.74s}
+  @keyframes sonar{0%{transform:scale(.34);opacity:.55}100%{transform:scale(1);opacity:0}}
+  .radar .core{width:92px;height:92px;border-radius:31px;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--accent) 15%,transparent);
+    border:1px solid color-mix(in srgb,var(--accent) 42%,transparent);}
+  .radar .core svg{width:38px;height:38px;stroke:var(--accent);fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round;}
+  .nfcbody{position:absolute;inset:0;padding:92px 34px 0;display:flex;flex-direction:column;
+    align-items:center;text-align:center;}
+  .nfcbody h3{font-size:17px;font-weight:600;color:#fff;margin-top:34px;}
+  .nfcbody p{font-size:11.5px;line-height:1.7;color:rgba(255,255,255,.6);margin-top:8px;}
+  .nfcbody .ready{display:flex;align-items:center;gap:7px;margin-top:20px;font-size:9.5px;
+    letter-spacing:1.3px;font-weight:600;color:rgba(255,255,255,.72);}
+  .nfcbody .ready i{width:6px;height:6px;border-radius:50%;background:var(--mint);}
+</style>
+</head>
+<body data-mode="light" data-accent="blue">
+
+<div class="board">
+  <div class="board-head">
+    <div>
+      <h1>LockIn — Today</h1>
+      <p>A tinted sky, one white card, and a single ink pill. The dial is gone: the session lives
+         in the card, the week lives in the strip. Switch mode and accent to see the tokens move.</p>
+    </div>
+    <div class="controls">
+      <div class="ctrl">
+        <span class="lbl">MODE</span>
+        <div class="seg" id="modeSeg">
+          <button data-mode="light" class="on">Light</button>
+          <button data-mode="dark">Dark</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <span class="lbl">ACCENT</span>
+        <div class="seg swatches" id="accentSeg">
+          <button class="sw blue on" data-accent="blue" aria-label="Blue"></button>
+          <button class="sw green" data-accent="green" aria-label="Green"></button>
+          <button class="sw red" data-accent="red" aria-label="Red"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="rail">
+
+  <!-- ================================================================ TODAY -->
+  <div class="phone"><div class="screen">
+    <div class="scroll">
+      <div class="hdr">
+        <div>
+          <h1>Today</h1>
+          <p>Wed, Aug 6</p>
+        </div>
+        <div class="hdr-right">
+          <div class="gear">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+          </div>
+          <div class="ringwrap">
+            <div class="ring">
+              <svg width="44" height="44" viewBox="0 0 44 44">
+                <circle cx="22" cy="22" r="20.5" fill="none" stroke="color-mix(in srgb,var(--hdr) 22%,transparent)" stroke-width="2.5"/>
+                <circle cx="22" cy="22" r="20.5" fill="none" stroke="var(--hdr)" stroke-width="2.5"
+                  stroke-linecap="round" pathLength="100" stroke-dasharray="58 100"
+                  transform="rotate(-90 22 22)"/>
+              </svg>
+              <div class="pct">58%</div>
+            </div>
+            <span class="cap">GOAL</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chips">
+        <div class="chip on"><i></i>SC2008</div>
+        <div class="chip"><i></i>SC2002</div>
+        <div class="chip"><i></i>SC2006</div>
+        <div class="chip dash">+ Add</div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <span class="eyebrow">TODAY'S FOCUS</span>
+          <span class="goalchip">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h9l-1 3 1 3H5"/><path d="M18 21V4"/></svg>
+            70m / 120m
+          </span>
+        </div>
+        <h2>Computer Networks</h2>
+        <p class="body">Finish the socket programming problem set, then skim chapter 4 on congestion control.</p>
+        <div class="meta">
+          <div class="durs"><span class="dur">25m</span><span class="dur on">50m</span><span class="dur">90m</span></div>
+          <span class="ends">Ends 4:30 PM</span>
+        </div>
+        <div class="cta">
+          Start Session
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <div class="lockrow">
+        <span class="eyebrow">LOCK</span>
+        <span class="mchip on"><svg viewBox="0 0 24 24"><path d="M8 5l12 7-12 7V5z"/></svg>Manual</span>
+        <span class="mchip"><svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Barcode</span>
+        <span class="mchip"><svg viewBox="0 0 24 24"><path d="M6 9a9 9 0 000 6M10 6.5a13 13 0 010 11M14 5a17 17 0 010 14"/></svg>Card</span>
+      </div>
+
+      <div class="tl">
+        <div class="tl-head">
+          <span class="eyebrow">TIMELINE</span>
+          <span class="r">Aug 5 – 11</span>
+        </div>
+        <div class="days">
+          <div class="day done"><span>T</span><i></i></div>
+          <div class="day done"><span>W</span><i></i></div>
+          <div class="day done"><span>T</span><i></i></div>
+          <div class="day today"><span>F</span><i></i></div>
+          <div class="day"><span>S</span><i></i></div>
+          <div class="day"><span>S</span><i></i></div>
+          <div class="day"><span>M</span><i></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="item on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Focus Hub</div>
+      <div class="item"><svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Vault</div>
+      <div class="item"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Analytics</div>
+    </div>
+  </div></div>
+
+  <!-- ========================================================= ACTIVE LOCKED -->
+  <div class="phone"><div class="screen">
+    <div class="scroll">
+      <div class="locked">
+        <div class="status"><i></i>LOCKED IN</div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;width:100%;">
+          <div class="dial">
+            <svg width="250" height="250" viewBox="0 0 250 250">
+              <circle cx="125" cy="125" r="122" fill="none" stroke="color-mix(in srgb,var(--ink) 7%,transparent)" stroke-width="1"/>
+              <circle cx="125" cy="125" r="122" fill="none" stroke="color-mix(in srgb,var(--accent) 45%,transparent)"
+                stroke-width="1" stroke-linecap="round" pathLength="100" stroke-dasharray="72 100"
+                transform="rotate(-90 125 125)"/>
+              <circle cx="125" cy="125" r="110" fill="none" stroke="color-mix(in srgb,var(--ink) 8%,transparent)" stroke-width="2.5"/>
+              <circle cx="125" cy="125" r="110" fill="none" stroke="var(--accent)" stroke-width="2.5"
+                stroke-linecap="round" pathLength="100" stroke-dasharray="72 100"
+                transform="rotate(-90 125 125)"/>
+            </svg>
+            <div class="center"><div class="time">42:18</div></div>
+          </div>
+
+          <div class="pillrow" style="margin-top:16px;"><i></i>Studying: SC2008</div>
+
+          <div class="card" style="margin-top:14px;width:100%;">
+            <div class="row">
+              <span class="eyebrow" style="display:flex;align-items:center;gap:6px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h9l-1 3 1 3H5"/><path d="M18 21V4"/></svg>
+                THIS WEEK'S GOAL
+              </span>
+              <span style="font-size:9.5px;font-weight:600;color:var(--accent);">71m / 120m</span>
+            </div>
+            <p class="body" style="margin-top:8px;">Finish the socket programming problem set</p>
+            <div style="margin-top:10px;height:4px;border-radius:999px;background:color-mix(in srgb,var(--ink) 8%,transparent);overflow:hidden;">
+              <div style="width:59%;height:100%;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 55%,transparent),var(--accent));"></div>
+            </div>
+            <div style="margin-top:6px;font-size:9px;color:var(--ink3);">49m left to hit this week's target.</div>
+          </div>
+        </div>
+
+        <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;">
+          <div style="display:flex;gap:8px;">
+            <div class="ghost"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg>Pause</div>
+            <div class="ghost" style="color:var(--coral);"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stop</div>
+          </div>
+          <div class="unlock" style="width:100%;">
+            <div class="l">
+              <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
+              Unlock Early
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============================================================== VAULT -->
+  <div class="phone"><div class="screen">
+    <div class="scroll">
+      <div class="page-head">
+        <h1 class="page-title">Trigger Vault</h1>
+        <div class="skybtn">
+          <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
+        </div>
+      </div>
+
+      <div class="sechead">
+        <span class="t">Saved Physical Keys</span>
+        <span class="badge">3 REGISTERED</span>
+      </div>
+
+      <div class="keyrow">
+        <div class="kicon" style="background:color-mix(in srgb,var(--accent) 11%,transparent);color:var(--accent);">
+          <svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>
+        </div>
+        <div class="mid">
+          <div class="name">Desk Bottle (Optical)</div>
+          <div class="st"><i></i>Ready to scan</div>
+        </div>
+        <div class="switch"><i></i></div>
+      </div>
+
+      <div class="keyrow">
+        <div class="kicon" style="background:color-mix(in srgb,var(--mint) 11%,transparent);color:var(--mint);">
+          <svg viewBox="0 0 24 24"><path d="M6 9a9 9 0 000 6M10 6.5a13 13 0 010 11M14 5a17 17 0 010 14"/></svg>
+        </div>
+        <div class="mid">
+          <div class="name">Student ID</div>
+          <div class="st"><i></i>NFC · 04:52:8A:1C</div>
+        </div>
+        <div class="switch"><i></i></div>
+      </div>
+
+      <div class="keyrow">
+        <div class="kicon" style="background:color-mix(in srgb,var(--violet) 11%,transparent);color:var(--violet);">
+          <svg viewBox="0 0 24 24"><path d="M3 12h18M6 12v4M12 12v4M18 12v4"/></svg>
+        </div>
+        <div class="mid">
+          <div class="name">Library L3 Wi-Fi</div>
+          <div class="st" style="color:var(--ink3);"><i style="background:var(--ink3);"></i>Zone · idle</div>
+        </div>
+        <div class="switch" style="background:color-mix(in srgb,var(--ink) 14%,transparent);"><i style="right:auto;left:2px;"></i></div>
+      </div>
+
+      <div class="register">+ &nbsp;Register New</div>
+
+      <div class="note">Keys only arm the lock or release it early — nothing interrupts a running session.</div>
+    </div>
+
+    <div class="nav">
+      <div class="item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Focus Hub</div>
+      <div class="item on"><svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Vault</div>
+      <div class="item"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Analytics</div>
+    </div>
+  </div></div>
+
+  <!-- ============================================================ ANALYTICS -->
+  <div class="phone"><div class="screen">
+    <div class="scroll">
+      <div class="page-head">
+        <h1 class="page-title">Study Analytics</h1>
+        <div class="skybtn">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="v">24.5h</div>
+          <div class="l">Total Focus</div>
+          <div class="s" style="color:var(--accent);">↑ +18%</div>
+        </div>
+        <div class="metric">
+          <div class="v">92%</div>
+          <div class="l">Lock-In Rate</div>
+          <div class="s" style="color:var(--mint);">● On track</div>
+        </div>
+        <div class="metric">
+          <div class="v">18</div>
+          <div class="l">Sessions</div>
+          <div class="s" style="color:var(--ink3);">this week</div>
+        </div>
+      </div>
+
+      <div class="card chart">
+        <div class="row"><span class="eyebrow">LAST 7 DAYS</span><span class="ends">hours</span></div>
+        <div class="bars">
+          <div class="bcol"><div class="b" style="height:38%"></div><span class="d">M</span></div>
+          <div class="bcol"><div class="b" style="height:62%"></div><span class="d">T</span></div>
+          <div class="bcol on"><div class="b" style="height:88%"></div><span class="d">W</span></div>
+          <div class="bcol"><div class="b" style="height:46%"></div><span class="d">T</span></div>
+          <div class="bcol"><div class="b" style="height:70%"></div><span class="d">F</span></div>
+          <div class="bcol"><div class="b" style="height:28%"></div><span class="d">S</span></div>
+          <div class="bcol"><div class="b" style="height:16%"></div><span class="d">S</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row"><span class="eyebrow">LAST 12 WEEKS</span><span class="ends">avg 3.4h</span></div>
+        <div class="heat">
+          <i style="background:color-mix(in srgb,var(--accent) 12%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 34%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 18%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 55%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 26%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 72%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 40%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 20%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 62%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 30%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 86%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 48%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 22%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 44%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 66%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 14%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 38%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 58%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 80%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 28%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 50%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 68%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 34%,transparent)"></i>
+          <i style="background:color-mix(in srgb,var(--accent) 90%,transparent)"></i>
+        </div>
+
+        <div class="courserow"><span class="dot" style="background:var(--accent)"></span>SC2008 Computer Networks<span class="val">9.5h</span></div>
+        <div class="courserow"><span class="dot" style="background:var(--mint)"></span>SC2002 OOP<span class="val">7.2h</span></div>
+        <div class="courserow"><span class="dot" style="background:var(--amber)"></span>SC2006 Software Eng<span class="val">5.1h</span></div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Focus Hub</div>
+      <div class="item"><svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Vault</div>
+      <div class="item on"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Analytics</div>
+    </div>
+  </div></div>
+
+</div>
+  <!-- ================================================================ NOTES -->
+  <div class="phone"><div class="screen">
+    <div class="scroll">
+      <div class="wkhdr">
+        <div>
+          <div class="page-title">This Week</div>
+          <div class="date">Oct 19 – 25 <span style="opacity:.72">&middot; 2/5 done</span></div>
+        </div>
+        <div class="navbtns">
+          <div class="wkbtn"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></div>
+          <div class="wkbtn"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+        </div>
+      </div>
+      <div class="sechead" style="margin:13px 2px 2px"><div class="t">Weekly Goals</div>
+        <div class="badge" style="color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);">2 / 5</div></div>
+
+      <div class="card" style="margin-top:8px;padding:15px 18px;">
+        <div class="progwrap"><div class="prog"><i style="width:40%"></i></div></div>
+
+        <div class="goalrow done">
+          <div class="gcheck on"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+          <span class="gt">Finish SC2008 assignment 2</span>
+          <button class="gdel"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+        </div>
+        <div class="goalrow done">
+          <div class="gcheck on"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+          <span class="gt">Read chapter 6 before Thursday</span>
+          <button class="gdel"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+        </div>
+        <div class="goalrow">
+          <div class="gcheck"></div>
+          <span class="gt">Three SC2008 sessions before Friday</span>
+          <button class="gdel"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+        </div>
+        <div class="goalrow">
+          <div class="gcheck"></div>
+          <span class="gt">Reply to the project supervisor</span>
+          <button class="gdel"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+        </div>
+
+        <div class="carry">Bring 2 open goals from last week</div>
+
+        <div class="addgoal">
+          <div class="field">Add a goal for this week&hellip;</div>
+          <div class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+      </div>
+
+      <div class="sechead" style="margin:13px 2px 2px"><div class="t">Notes</div>
+        <div class="badge">2 NOTES</div></div>
+
+      <div class="notecard">
+        <div class="nb">Assignment 2 needs the circuit diagram redone — the topology numbering was wrong. Start with the packet tracer file.</div>
+        <div class="nf">TODAY &middot; 2:14 PM <i></i></div>
+      </div>
+      <div class="notecard">
+        <div class="nb">Week went sideways after Wednesday. Two sessions only — move the OOP backlog into next week.</div>
+        <div class="nf">YESTERDAY &middot; 9:41 PM <i></i></div>
+      </div>
+      <div class="addnote">+&nbsp;&nbsp;New note</div>
+    </div>
+
+    <div class="nav">
+      <div class="item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Focus Hub</div>
+      <div class="item"><svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg>Vault</div>
+      <div class="item on"><svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Notes</div>
+      <div class="item"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Analytics</div>
+    </div>
+  </div></div>
+
+  <!-- =========================================================== QR SCANNER -->
+  <div class="phone"><div class="screen">
+    <div class="scanner">
+      <div class="sbar">
+        <div>
+          <h3>Scan a key</h3>
+          <p>Barcode, QR, EAN or Code128</p>
+        </div>
+        <div class="sclose"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+      </div>
+
+      <div class="dead">
+        <div class="feed"></div>
+        <div class="shade"></div>
+        <div class="viwe">
+          <i class="c c1"></i><i class="c c2"></i><i class="c c3"></i><i class="c c4"></i>
+          <div class="laser"></div>
+        </div>
+      </div>
+
+      <div class="sfoot">
+        <div class="hint">Point the camera at the barcode on your bottle, notebook or card</div>
+        <div class="ghost2"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Torch off</div>
+        <div class="ghost2"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>Enter manually</div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- =============================================================== NFC TAP -->
+  <div class="phone"><div class="screen">
+    <div class="scanner" style="background:linear-gradient(180deg,#08110E 0%,#070C12 46%,#05080F 100%);">
+      <div class="sbar">
+        <div>
+          <h3>Tap your card</h3>
+          <p>Reading raw tag UID</p>
+        </div>
+        <div class="sclose"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+      </div>
+
+      <div class="dead">
+        <div class="feed" style="opacity:.45"></div>
+        <div class="shade" style="background:linear-gradient(180deg,rgba(5,8,15,.62),rgba(5,8,15,.9))"></div>
+        <div class="radar">
+          <i class="ring"></i><i class="ring"></i><i class="ring"></i>
+          <div class="core"><svg viewBox="0 0 24 24"><path d="M8.5 9.5a4 4 0 0 1 0 5M15.5 9.5a4 4 0 0 0 0 5"/><circle cx="12" cy="12" r="2.4"/></svg></div>
+        </div>
+      </div>
+
+      <div class="nfcbody">
+        <h3>Hold the card against the back of your phone</h3>
+        <p>Student cards, transit cards and contactless payment cards all work &mdash; LockIn only reads the hardware UID, never the balance or contents.</p>
+        <div class="ready"><i></i>READER READY</div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<script>
+  const modeSeg = document.getElementById('modeSeg');
+  const accentSeg = document.getElementById('accentSeg');
+  const body = document.body;
+
+  modeSeg.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    body.dataset.mode = btn.dataset.mode;
+    [...modeSeg.children].forEach(b => b.classList.toggle('on', b === btn));
+  });
+
+  accentSeg.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-accent]');
+    if (!btn) return;
+    body.dataset.accent = btn.dataset.accent;
+    [...accentSeg.children].forEach(b => b.classList.toggle('on', b === btn));
+  });
+</script>
+</body>
+</html>
