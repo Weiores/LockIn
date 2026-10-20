@@ -1,7 +1,16 @@
 package com.lockin.app.ui.focushub
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,20 +29,25 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,50 +57,58 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.lockin.app.domain.model.CourseModule
-import com.lockin.app.ui.components.AccentGlassCard
+import com.lockin.app.domain.model.TimerState
+import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.components.GlassCard
 import com.lockin.app.ui.components.TimerRingCanvas
-import com.lockin.app.ui.theme.AccentBlue
-import com.lockin.app.ui.theme.AccentCyan
-import com.lockin.app.ui.theme.AccentGreen
-import com.lockin.app.ui.theme.AccentOrange
-import com.lockin.app.ui.theme.GlassBorderTop
-import com.lockin.app.ui.theme.TextPrimary
-import com.lockin.app.ui.theme.TextSecondary
+import com.lockin.app.ui.theme.AppleBlue
+import com.lockin.app.ui.theme.AppleGreen
+import com.lockin.app.ui.theme.AppleOrange
+import com.lockin.app.ui.theme.AppleRed
+import com.lockin.app.ui.theme.LocalDarkTheme
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FocusHubScreen(
     onNavigateToActiveSession: (Long) -> Unit = {},
     viewModel: FocusHubViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val isDark = LocalDarkTheme.current
+    val systemDark = isSystemInDarkTheme()
+
+    val timerState by viewModel.timerState.collectAsState()
     val modules by viewModel.modules.collectAsState()
     val selectedModule by viewModel.selectedModule.collectAsState()
     val selectedDurationMinutes by viewModel.selectedDurationMinutes.collectAsState()
     val streakDays by viewModel.streakDays.collectAsState()
 
-    val totalDurationMs = selectedDurationMinutes * 60 * 1000L
+    val isSessionActive = timerState is TimerState.ActiveLocked
+    val activeRemainingMs = (timerState as? TimerState.ActiveLocked)?.remainingMs
+    val activeTotalMs = (timerState as? TimerState.ActiveLocked)?.totalMs
 
-    // Calculate estimated end time
+    val displayRemainingMs = activeRemainingMs ?: (selectedDurationMinutes * 60 * 1000L)
+    val displayTotalMs = activeTotalMs ?: (selectedDurationMinutes * 60 * 1000L)
+
+    var showStopDialog by remember { mutableStateOf(false) }
+
     val estimatedEndTime = remember(selectedDurationMinutes) {
         val now = LocalTime.now()
         val end = now.plusMinutes(selectedDurationMinutes.toLong())
-        val formatter = DateTimeFormatter.ofPattern("hh:mm a")
+        val formatter = DateTimeFormatter.ofPattern("h:mm a")
         end.format(formatter)
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        // --- Header Card: Streak + Wi-Fi Status ---
+        // --- Top Header: Streak + Wi-Fi Pill + Light/Dark Toggle ---
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -101,79 +123,110 @@ fun FocusHubScreen(
                     Icon(
                         imageVector = Icons.Filled.LocalFireDepartment,
                         contentDescription = "Streak",
-                        tint = AccentOrange,
-                        modifier = Modifier.size(28.dp),
+                        tint = AppleOrange,
+                        modifier = Modifier.size(26.dp),
                     )
                     Column {
                         Text(
                             text = "$streakDays Days",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = "Current Streak",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
 
-                // Wi-Fi status pill
-                GlassCard(
-                    cornerRadius = 12.dp,
-                    contentPadding = 6.dp,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    // Wi-Fi status pill
                     Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (isDark) Color.White.copy(alpha = 0.07f) else Color.Black.copy(alpha = 0.04f),
+                            )
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Wifi,
                             contentDescription = "Wi-Fi",
-                            tint = AccentGreen,
-                            modifier = Modifier.size(14.dp),
+                            tint = AppleGreen,
+                            modifier = Modifier.size(13.dp),
                         )
                         Text(
-                            text = "Ready to Focus",
+                            text = "Ready",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    // Theme Mode Toggle (Sun/Moon)
+                    IconButton(
+                        onClick = { viewModel.toggleDarkMode(isDark) },
+                        modifier = Modifier.size(34.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (isDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                            contentDescription = "Toggle Light/Dark Mode",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
                         )
                     }
                 }
             }
         }
 
-        // --- Module Picker Header & Horizontal Row ---
+        // --- Course Module Picker (Horizontal Clean Chips) ---
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = "COURSE MODULE",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = 1.2.sp,
-                color = TextSecondary,
+                letterSpacing = 1.1.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 2.dp),
             )
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {
-                    FilterChip(
-                        selected = selectedModule == null,
-                        onClick = { viewModel.selectModule(null) },
-                        label = { Text("General Focus") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AccentBlue.copy(alpha = 0.2f),
-                            selectedLabelColor = AccentBlue,
-                            containerColor = Color.White.copy(alpha = 0.05f),
-                            labelColor = TextSecondary,
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = if (selectedModule == null) AccentBlue.copy(alpha = 0.4f) else GlassBorderTop,
-                            enabled = true,
-                            selected = selectedModule == null,
-                        ),
+                    val isGeneralSelected = selectedModule == null
+                    val chipBg by animateColorAsState(
+                        targetValue = if (isGeneralSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
+                        },
+                        animationSpec = spring(),
+                        label = "generalChipBg",
                     )
+                    val chipTextColor = if (isGeneralSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(chipBg)
+                            .clickable { viewModel.selectModule(null) }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            text = "General Focus",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isGeneralSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = chipTextColor,
+                        )
+                    }
                 }
 
                 items(modules) { module ->
@@ -181,82 +234,44 @@ fun FocusHubScreen(
                     val moduleColor = try {
                         Color(android.graphics.Color.parseColor(module.colorHex))
                     } catch (e: Exception) {
-                        AccentBlue
+                        AppleBlue
                     }
 
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { viewModel.selectModule(module) },
-                        label = { Text(module.code) },
-                        leadingIcon = {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(moduleColor),
-                            )
+                    val chipBg by animateColorAsState(
+                        targetValue = if (isSelected) {
+                            moduleColor
+                        } else {
+                            if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
                         },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = moduleColor.copy(alpha = 0.2f),
-                            selectedLabelColor = moduleColor,
-                            containerColor = Color.White.copy(alpha = 0.05f),
-                            labelColor = TextSecondary,
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = if (isSelected) moduleColor.copy(alpha = 0.5f) else GlassBorderTop,
-                            enabled = true,
-                            selected = isSelected,
-                        ),
+                        animationSpec = spring(),
+                        label = "moduleChipBg",
                     )
-                }
-            }
-        }
+                    val chipTextColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
 
-        // --- Timer Dial GlassCard ---
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                TimerRingCanvas(
-                    remainingMs = totalDurationMs,
-                    totalMs = totalDurationMs,
-                    size = 240.dp,
-                    strokeWidth = 12.dp,
-                )
-
-                // Projected End Time
-                Text(
-                    text = "Ends at $estimatedEndTime",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary,
-                )
-
-                // Quick Preset Pills
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val presets = listOf(25, 50, 90)
-                    presets.forEach { minutes ->
-                        val isSelected = selectedDurationMinutes == minutes
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    if (isSelected) AccentBlue.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.05f),
-                                )
-                                .clickable { viewModel.selectDuration(minutes) }
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(chipBg)
+                            .clickable { viewModel.selectModule(module) }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
+                            if (!isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(moduleColor),
+                                )
+                            }
                             Text(
-                                text = "${minutes}m",
+                                text = module.code,
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) AccentCyan else TextSecondary,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = chipTextColor,
                             )
                         }
                     }
@@ -264,40 +279,214 @@ fun FocusHubScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // --- Start CTA Button ---
-        AccentGlassCard(
+        // --- Clean Floating Timer Dial (No Square Borders!) ---
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable {
-                    viewModel.startSession(context) { sessionId ->
-                        onNavigateToActiveSession(sessionId)
-                    }
-                },
-            accentColor = AccentBlue,
+                .padding(vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Lock,
-                    contentDescription = "Lock In",
-                    tint = AccentBlue,
-                    modifier = Modifier.size(20.dp),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Start & Lock In",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = AccentBlue,
-                )
+            TimerRingCanvas(
+                remainingMs = displayRemainingMs,
+                totalMs = displayTotalMs,
+                isPaused = (timerState as? TimerState.ActiveLocked)?.isPaused ?: false,
+                size = 250.dp,
+                strokeWidth = 10.dp,
+            )
+
+            // Projected End Time
+            Text(
+                text = if (isSessionActive) "Session in progress" else "Ends at $estimatedEndTime",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            // Duration Presets (Hidden when session is actively running)
+            AnimatedVisibility(visible = !isSessionActive) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    listOf(25, 50, 90).forEach { mins ->
+                        val isSelected = selectedDurationMinutes == mins
+                        val pillBg by animateColorAsState(
+                            targetValue = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f)
+                            },
+                            animationSpec = spring(),
+                            label = "presetPillBg",
+                        )
+                        val pillTextColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(pillBg)
+                                .clickable { viewModel.selectDuration(mins) }
+                                .padding(horizontal = 20.dp, vertical = 9.dp),
+                        ) {
+                            Text(
+                                text = "${mins}m",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = pillTextColor,
+                            )
+                        }
+                    }
+                }
             }
         }
+
+        // --- Action Buttons with Animation ---
+        AnimatedContent(
+            targetState = isSessionActive,
+            transitionSpec = { fadeIn(spring()) togetherWith fadeOut(spring()) },
+            label = "actionButtonsTransition",
+        ) { active ->
+            if (active) {
+                val activeSessionId = (timerState as? TimerState.ActiveLocked)?.sessionId ?: -1L
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    // Resume / View Session CTA
+                    GlassButton(
+                        onClick = {
+                            if (activeSessionId > 0) {
+                                onNavigateToActiveSession(activeSessionId)
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        containerColor = MaterialTheme.colorScheme.primary,
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = "View Session",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "View Session",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                            )
+                        }
+                    }
+
+                    // Stop Session Button
+                    GlassButton(
+                        onClick = { showStopDialog = true },
+                        modifier = Modifier.weight(1f),
+                        containerColor = AppleRed.copy(alpha = if (isDark) 0.25f else 0.12f),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Stop,
+                                contentDescription = "Stop Session",
+                                tint = AppleRed,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Stop",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = AppleRed,
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Start & Lock In CTA
+                GlassButton(
+                    onClick = {
+                        viewModel.startSession(context) { sessionId ->
+                            onNavigateToActiveSession(sessionId)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Lock,
+                            contentDescription = "Lock In",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Start & Lock In",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Stop Confirmation Dialog
+    if (showStopDialog) {
+        AlertDialog(
+            onDismissRequest = { showStopDialog = false },
+            title = {
+                Text(
+                    text = "Stop Session?",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            },
+            text = {
+                Text(
+                    text = "Ending the session early will cancel your current deep work timer.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showStopDialog = false
+                        viewModel.stopActiveSession(context)
+                    },
+                ) {
+                    Text("Stop", color = AppleRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStopDialog = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.primary)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

@@ -1,7 +1,10 @@
 package com.lockin.app.ui.navigation
 
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -36,9 +39,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.lockin.app.ui.focushub.FocusHubScreen
-import com.lockin.app.ui.theme.AccentBlue
-import com.lockin.app.ui.theme.SurfaceDark
-import com.lockin.app.ui.theme.TextSecondary
 import com.lockin.app.ui.timer.ActiveSessionOverlay
 
 private data class BottomNavItem(
@@ -61,18 +61,18 @@ fun LockInNavGraph() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Hide bottom nav during active session
+    // Dynamically hide bottom navigation bar during active session overlay
     val showBottomBar = currentDestination?.let { dest ->
         bottomNavItems.any { dest.hasRoute(it.route::class) }
     } ?: true
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
-                    containerColor = SurfaceDark.copy(alpha = 0.85f),
-                    contentColor = TextSecondary,
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ) {
                     bottomNavItems.forEach { item ->
                         val selected = currentDestination?.hierarchy?.any {
@@ -98,11 +98,11 @@ fun LockInNavGraph() {
                             },
                             label = { Text(item.label) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = AccentBlue,
-                                selectedTextColor = AccentBlue,
-                                unselectedIconColor = TextSecondary,
-                                unselectedTextColor = TextSecondary,
-                                indicatorColor = AccentBlue.copy(alpha = 0.12f),
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                             ),
                         )
                     }
@@ -114,8 +114,10 @@ fun LockInNavGraph() {
             navController = navController,
             startDestination = Screen.FocusHub,
             modifier = Modifier.padding(innerPadding),
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() },
+            enterTransition = { fadeIn(tween(280)) + scaleIn(initialScale = 0.96f, animationSpec = tween(280)) },
+            exitTransition = { fadeOut(tween(200)) + scaleOut(targetScale = 0.98f, animationSpec = tween(200)) },
+            popEnterTransition = { fadeIn(tween(280)) + scaleIn(initialScale = 0.98f, animationSpec = tween(280)) },
+            popExitTransition = { fadeOut(tween(200)) + scaleOut(targetScale = 0.96f, animationSpec = tween(200)) },
         ) {
             composable<Screen.FocusHub> {
                 FocusHubScreen(
@@ -134,15 +136,12 @@ fun LockInNavGraph() {
                 )
             }
             composable<Screen.TriggerVault> {
-                // Placeholder — Phase 4
                 PlaceholderScreen(title = "Trigger Vault")
             }
             composable<Screen.Analytics> {
-                // Placeholder — Phase 6
                 PlaceholderScreen(title = "Analytics")
             }
             composable<Screen.Settings> {
-                // Placeholder — Phase 5
                 PlaceholderScreen(title = "Settings")
             }
         }
@@ -158,7 +157,7 @@ private fun PlaceholderScreen(title: String) {
         Text(
             text = title,
             style = MaterialTheme.typography.headlineMedium,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

@@ -1,8 +1,10 @@
 package com.lockin.app.ui.timer
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,13 +24,13 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,21 +44,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.lockin.app.domain.model.TimerState
-import com.lockin.app.ui.components.AccentGlassCard
+import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.components.GlassCard
 import com.lockin.app.ui.components.TimerRingCanvas
-import com.lockin.app.ui.theme.AccentBlue
-import com.lockin.app.ui.theme.AccentGreen
-import com.lockin.app.ui.theme.AccentRed
-import com.lockin.app.ui.theme.SurfaceDark
-import com.lockin.app.ui.theme.TextPrimary
-import com.lockin.app.ui.theme.TextSecondary
+import com.lockin.app.ui.theme.AppleBlue
+import com.lockin.app.ui.theme.AppleGreen
+import com.lockin.app.ui.theme.AppleRed
+import com.lockin.app.ui.theme.LocalDarkTheme
 
 @Composable
 fun ActiveSessionOverlay(
@@ -64,9 +65,11 @@ fun ActiveSessionOverlay(
     onNavigateBack: () -> Unit,
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
+    val isDark = LocalDarkTheme.current
     val timerState by viewModel.timerState.collectAsState()
     val activeModule by viewModel.activeModule.collectAsState()
-    var showGiveUpDialog by remember { mutableStateOf(false) }
+    var showStopDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(sessionId) {
         if (sessionId > 0) {
@@ -74,287 +77,242 @@ fun ActiveSessionOverlay(
         }
     }
 
-    // Full screen pitch-black OLED background
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(SurfaceDark),
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        when (val state = timerState) {
-            is TimerState.ActiveLocked -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 24.dp, vertical = 36.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    // Top Bar: Active Module Badge & Trigger Pill
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+        AnimatedContent(
+            targetState = timerState,
+            transitionSpec = { fadeIn(spring()) togetherWith fadeOut(spring()) },
+            label = "activeSessionStateTransition",
+        ) { state ->
+            when (state) {
+                is TimerState.ActiveLocked -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 24.dp, vertical = 40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        if (activeModule != null) {
+                        // Top Bar: Active Module Badge & Trigger Pill
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (activeModule != null) {
+                                GlassCard(
+                                    cornerRadius = 14.dp,
+                                    contentPadding = 8.dp,
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        val moduleColor = try {
+                                            Color(android.graphics.Color.parseColor(activeModule!!.colorHex))
+                                        } catch (e: Exception) {
+                                            AppleBlue
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .clip(CircleShape)
+                                                .background(moduleColor),
+                                        )
+                                        Text(
+                                            text = activeModule!!.code,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    }
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.width(1.dp))
+                            }
+
+                            // Trigger pill
                             GlassCard(
-                                cornerRadius = 12.dp,
+                                cornerRadius = 14.dp,
                                 contentPadding = 8.dp,
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                ) {
-                                    val moduleColor = try {
-                                        Color(android.graphics.Color.parseColor(activeModule!!.colorHex))
-                                    } catch (e: Exception) {
-                                        AccentBlue
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .clip(CircleShape)
-                                            .background(moduleColor),
-                                    )
-                                    Text(
-                                        text = activeModule!!.code,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextPrimary,
-                                    )
-                                }
+                                Text(
+                                    text = state.triggerType.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = 0.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
-                        } else {
-                            Spacer(modifier = Modifier.width(1.dp))
                         }
 
-                        // Trigger pill
-                        GlassCard(
-                            cornerRadius = 12.dp,
-                            contentPadding = 8.dp,
-                        ) {
-                            Text(
-                                text = state.triggerType.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = TextSecondary,
-                            )
-                        }
-                    }
+                        // Center: Clean Floating Circular Ring
+                        TimerRingCanvas(
+                            remainingMs = state.remainingMs,
+                            totalMs = state.totalMs,
+                            isPaused = state.isPaused,
+                            size = 270.dp,
+                            strokeWidth = 12.dp,
+                        )
 
-                    // Center: Circular Timer Ring
-                    TimerRingCanvas(
-                        remainingMs = state.remainingMs,
-                        totalMs = state.totalMs,
-                        isPaused = state.isPaused,
-                        size = 280.dp,
-                        strokeWidth = 14.dp,
-                    )
-
-                    // Bottom: Control Buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // Pause / Resume Glass Button
-                        GlassCard(
-                            cornerRadius = 24.dp,
-                            contentPadding = 4.dp,
+                        // Bottom: Control Buttons (Pause / Resume & Stop)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            // Pause / Resume Glass Button
                             IconButton(
                                 onClick = {
                                     if (state.isPaused) viewModel.resume() else viewModel.pause()
                                 },
-                                modifier = Modifier.size(56.dp),
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isDark) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.05f),
+                                    ),
                             ) {
                                 Icon(
                                     imageVector = if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
                                     contentDescription = if (state.isPaused) "Resume" else "Pause",
-                                    tint = AccentBlue,
-                                    modifier = Modifier.size(28.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(26.dp),
                                 )
                             }
-                        }
 
-                        // Give Up Button
-                        GlassCard(
-                            cornerRadius = 24.dp,
-                            contentPadding = 4.dp,
-                        ) {
+                            Spacer(modifier = Modifier.width(28.dp))
+
+                            // Functional Stop / Give Up Button
                             IconButton(
-                                onClick = { showGiveUpDialog = true },
-                                modifier = Modifier.size(56.dp),
+                                onClick = { showStopDialog = true },
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(CircleShape)
+                                    .background(AppleRed.copy(alpha = if (isDark) 0.18f else 0.10f)),
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = "Give Up",
-                                    tint = AccentRed.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(28.dp),
+                                    imageVector = Icons.Filled.Stop,
+                                    contentDescription = "Stop Session",
+                                    tint = AppleRed,
+                                    modifier = Modifier.size(26.dp),
                                 )
                             }
                         }
                     }
                 }
-            }
 
-            is TimerState.Completed -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    GlassCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.CheckCircle,
-                                contentDescription = "Completed",
-                                tint = AccentGreen,
-                                modifier = Modifier.size(64.dp),
-                            )
-
-                            Text(
-                                text = "Session Complete!",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary,
-                            )
-
-                            val minutes = state.actualDurationMs / (60 * 1000)
-                            Text(
-                                text = "You focused for $minutes minutes of deep work.",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = TextSecondary,
-                                textAlign = TextAlign.Center,
-                            )
-
-                            AccentGlassCard(
+                is TimerState.Completed -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        GlassCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                accentColor = AccentGreen,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
                             ) {
-                                Button(
+                                Icon(
+                                    imageVector = Icons.Filled.CheckCircle,
+                                    contentDescription = "Completed",
+                                    tint = AppleGreen,
+                                    modifier = Modifier.size(60.dp),
+                                )
+
+                                Text(
+                                    text = "Session Complete!",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+
+                                val minutes = state.actualDurationMs / (60 * 1000)
+                                Text(
+                                    text = "You locked in for $minutes minutes of deep work.",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                )
+
+                                GlassButton(
                                     onClick = {
-                                        viewModel.dismiss()
+                                        viewModel.dismiss(context)
                                         onNavigateBack()
                                     },
                                     modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                    containerColor = AppleGreen,
                                 ) {
-                                    Text(
-                                        text = "Return to Focus Hub",
-                                        fontWeight = FontWeight.Bold,
-                                        color = AccentGreen,
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(50.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = "Return to Focus Hub",
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            is TimerState.Failed -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    GlassCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = "Failed",
-                                tint = AccentRed,
-                                modifier = Modifier.size(56.dp),
-                            )
-
-                            Text(
-                                text = "Session Ended Early",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary,
-                            )
-
-                            Text(
-                                text = "Streak broken. Don't worry, every session counts toward building the habit.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary,
-                                textAlign = TextAlign.Center,
-                            )
-
-                            Button(
-                                onClick = {
-                                    viewModel.dismiss()
-                                    onNavigateBack()
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = AccentRed.copy(alpha = 0.2f)),
-                            ) {
-                                Text(
-                                    text = "Back to Focus Hub",
-                                    color = AccentRed,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
+                else -> {
+                    // When Idle or Cancelled, automatically navigate back
+                    LaunchedEffect(Unit) {
+                        onNavigateBack()
                     }
-                }
-            }
-
-            else -> {
-                // If Idle, automatically exit
-                LaunchedEffect(Unit) {
-                    onNavigateBack()
                 }
             }
         }
     }
 
-    // Give Up Confirmation Dialog
-    if (showGiveUpDialog) {
+    // Stop Confirmation Dialog
+    if (showStopDialog) {
         AlertDialog(
-            onDismissRequest = { showGiveUpDialog = false },
+            onDismissRequest = { showStopDialog = false },
             title = {
                 Text(
-                    text = "Give Up Session?",
+                    text = "Stop Session?",
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             },
             text = {
                 Text(
-                    text = "Ending the session early will mark it as incomplete and reset your daily deep-work momentum.",
-                    color = TextSecondary,
+                    text = "Are you sure you want to stop this study session? Your timer will end immediately.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showGiveUpDialog = false
-                        viewModel.giveUp()
+                        showStopDialog = false
+                        viewModel.stopSession(context)
+                        onNavigateBack()
                     },
                 ) {
-                    Text("Give Up", color = AccentRed, fontWeight = FontWeight.Bold)
+                    Text("Stop", color = AppleRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showGiveUpDialog = false }) {
-                    Text("Keep Focusing", color = AccentBlue)
+                TextButton(onClick = { showStopDialog = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.primary)
                 }
             },
-            containerColor = SurfaceDark,
-            titleContentColor = TextPrimary,
-            textContentColor = TextSecondary,
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

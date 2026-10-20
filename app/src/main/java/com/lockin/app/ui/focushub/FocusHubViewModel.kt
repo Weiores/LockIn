@@ -4,10 +4,14 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lockin.app.domain.model.CourseModule
+import com.lockin.app.domain.model.FailReason
+import com.lockin.app.domain.model.TimerState
 import com.lockin.app.domain.model.TriggerType
 import com.lockin.app.domain.repository.ModuleRepository
+import com.lockin.app.domain.repository.PreferencesRepository
 import com.lockin.app.domain.repository.SessionRepository
 import com.lockin.app.domain.usecase.StartSessionUseCase
+import com.lockin.app.service.TimerEngine
 import com.lockin.app.service.TimerForegroundService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,8 +28,15 @@ import javax.inject.Inject
 class FocusHubViewModel @Inject constructor(
     private val moduleRepository: ModuleRepository,
     private val sessionRepository: SessionRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val startSessionUseCase: StartSessionUseCase,
+    private val timerEngine: TimerEngine,
 ) : ViewModel() {
+
+    val timerState: StateFlow<TimerState> = timerEngine.timerState
+
+    val isDarkMode: StateFlow<Boolean?> = preferencesRepository.darkMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val modules: StateFlow<List<CourseModule>> = moduleRepository.observeActiveModules()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -49,7 +60,6 @@ class FocusHubViewModel @Inject constructor(
 
     private fun seedInitialModulesIfEmpty() {
         viewModelScope.launch {
-            // Seed a couple default university modules if DB is fresh
             val existing = moduleRepository.getById(1)
             if (existing == null) {
                 moduleRepository.insert(
@@ -70,6 +80,12 @@ class FocusHubViewModel @Inject constructor(
             val oneDayAgo = Instant.now().minus(1, ChronoUnit.DAYS)
             val count = sessionRepository.countCompletedSessionsSince(oneDayAgo)
             _streakDays.value = if (count > 0) 1 else 0
+        }
+    }
+
+    fun toggleDarkMode(currentDark: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setDarkMode(!currentDark)
         }
     }
 
@@ -111,5 +127,11 @@ class FocusHubViewModel @Inject constructor(
 
             onSessionStarted(sessionId)
         }
+    }
+
+    fun stopActiveSession(context: Context) {
+        TimerForegroundService.stopService(context)
+        timerEngine.stopTimer(FailReason.USER_CANCELLED)
+        timerEngine.resetToIdle()
     }
 }

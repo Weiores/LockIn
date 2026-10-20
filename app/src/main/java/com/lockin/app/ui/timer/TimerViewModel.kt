@@ -1,5 +1,6 @@
 package com.lockin.app.ui.timer
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lockin.app.domain.model.CourseModule
@@ -9,6 +10,7 @@ import com.lockin.app.domain.repository.ModuleRepository
 import com.lockin.app.domain.repository.SessionRepository
 import com.lockin.app.domain.usecase.RecoverSessionUseCase
 import com.lockin.app.service.TimerEngine
+import com.lockin.app.service.TimerForegroundService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -66,12 +68,23 @@ class TimerViewModel @Inject constructor(
         timerEngine.resumeTimer()
     }
 
+    fun stopSession(context: Context) {
+        TimerForegroundService.stopService(context)
+        timerEngine.stopTimer(FailReason.USER_CANCELLED)
+        timerEngine.resetToIdle()
+        _activeModule.value = null
+    }
+
     fun giveUp() {
         timerEngine.stopTimer(FailReason.USER_CANCELLED)
     }
 
-    fun dismiss() {
+    fun dismiss(context: Context? = null) {
+        if (context != null) {
+            TimerForegroundService.stopService(context)
+        }
         timerEngine.resetToIdle()
         _activeModule.value = null
     }
 }
+

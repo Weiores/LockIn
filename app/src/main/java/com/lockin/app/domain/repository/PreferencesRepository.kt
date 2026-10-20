@@ -12,6 +12,7 @@ interface PreferencesRepository {
     val soundEnabled: Flow<Boolean>
     val graceCountdownSeconds: Flow<Int>
     val blacklistedPackages: Flow<Set<String>>
+    val darkMode: Flow<Boolean?>
     val activeTimerSnapshot: Flow<ActiveTimerSnapshot?>
 
     suspend fun setDefaultDuration(minutes: Int)
@@ -22,6 +23,7 @@ interface PreferencesRepository {
     suspend fun setSoundEnabled(enabled: Boolean)
     suspend fun setGraceCountdownSeconds(seconds: Int)
     suspend fun setBlacklistedPackages(packages: Set<String>)
+    suspend fun setDarkMode(isDark: Boolean?)
     suspend fun saveTimerSnapshot(snapshot: ActiveTimerSnapshot)
     suspend fun clearTimerSnapshot()
 }

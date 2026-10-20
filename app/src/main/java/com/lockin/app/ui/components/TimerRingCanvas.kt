@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -25,12 +24,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lockin.app.ui.theme.AccentBlue
-import com.lockin.app.ui.theme.AccentCyan
-import com.lockin.app.ui.theme.AccentRed
-import com.lockin.app.ui.theme.TextPrimary
-import com.lockin.app.ui.theme.TextSecondary
+import com.lockin.app.ui.theme.AppleRed
+import com.lockin.app.ui.theme.AppleRedDark
+import com.lockin.app.ui.theme.LocalDarkTheme
 
+/**
+ * Clean floating circular timer ring without square borders or artificial multi-color gradients.
+ * Dynamic light and dark mode support.
+ */
 @Composable
 fun TimerRingCanvas(
     modifier: Modifier = Modifier,
@@ -38,9 +39,11 @@ fun TimerRingCanvas(
     totalMs: Long,
     isPaused: Boolean = false,
     isWarning: Boolean = false,
-    size: Dp = 260.dp,
-    strokeWidth: Dp = 12.dp,
+    size: Dp = 250.dp,
+    strokeWidth: Dp = 10.dp,
 ) {
+    val isDark = LocalDarkTheme.current
+
     val progress = if (totalMs > 0) {
         (remainingMs.toFloat() / totalMs.toFloat()).coerceIn(0f, 1f)
     } else {
@@ -49,7 +52,7 @@ fun TimerRingCanvas(
 
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
-        animationSpec = tween(durationMillis = 400),
+        animationSpec = tween(durationMillis = 350),
         label = "timerProgress",
     )
 
@@ -57,8 +60,17 @@ fun TimerRingCanvas(
     val seconds = (remainingMs / 1000) % 60
     val formattedTime = "%02d:%02d".format(minutes, seconds)
 
-    val activeColor = if (isWarning) AccentRed else AccentBlue
-    val activeSecondaryColor = if (isWarning) AccentRed.copy(alpha = 0.7f) else AccentCyan
+    val trackColor = if (isDark) {
+        Color.White.copy(alpha = 0.08f)
+    } else {
+        Color.Black.copy(alpha = 0.06f)
+    }
+
+    val activeColor = when {
+        isWarning -> if (isDark) AppleRedDark else AppleRed
+        isPaused -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.primary
+    }
 
     Box(
         modifier = modifier.size(size),
@@ -70,9 +82,9 @@ fun TimerRingCanvas(
             val topLeft = Offset(strokePx / 2, strokePx / 2)
             val arcSize = Size(diameter, diameter)
 
-            // Background track (subtle translucent ring)
+            // Background subtle track
             drawArc(
-                color = Color.White.copy(alpha = 0.08f),
+                color = trackColor,
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -81,17 +93,11 @@ fun TimerRingCanvas(
                 style = Stroke(width = strokePx, cap = StrokeCap.Round),
             )
 
-            // Active progress arc with vertical/sweep gradient
+            // Active clean progress arc
             val sweepAngle = animatedProgress * 360f
             if (sweepAngle > 0f) {
                 drawArc(
-                    brush = Brush.sweepGradient(
-                        colors = listOf(
-                            activeColor,
-                            activeSecondaryColor,
-                            activeColor,
-                        ),
-                    ),
+                    color = activeColor,
                     startAngle = -90f,
                     sweepAngle = sweepAngle,
                     useCenter = false,
@@ -102,20 +108,20 @@ fun TimerRingCanvas(
             }
         }
 
-        // Center display
+        // Center typography
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = formattedTime,
-                fontSize = 46.sp,
+                fontSize = 44.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Default,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onBackground,
                 letterSpacing = (-0.5).sp,
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             val statusLabel = when {
                 isWarning -> "LIFT WARNING • 10s"
@@ -123,18 +129,12 @@ fun TimerRingCanvas(
                 else -> "LOCKED IN"
             }
 
-            val statusColor = when {
-                isWarning -> AccentRed
-                isPaused -> TextSecondary
-                else -> AccentCyan
-            }
-
             Text(
                 text = statusLabel,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = 1.5.sp,
-                color = statusColor,
+                letterSpacing = 1.2.sp,
+                color = activeColor,
             )
         }
     }

@@ -31,6 +31,7 @@ class UserPreferencesDataStore @Inject constructor(
         val SOUND_ENABLED = booleanPreferencesKey("sound_enabled")
         val GRACE_COUNTDOWN_SECONDS = intPreferencesKey("grace_countdown_seconds")
         val BLACKLISTED_PACKAGES = stringSetPreferencesKey("blacklisted_packages")
+        val DARK_MODE = booleanPreferencesKey("dark_mode")
 
         // Active timer snapshot for crash recovery
         val ACTIVE_SESSION_ID = longPreferencesKey("active_session_id")
@@ -80,6 +81,20 @@ class UserPreferencesDataStore @Inject constructor(
 
     val blacklistedPackages: Flow<Set<String>> = context.dataStore.data.map { prefs ->
         prefs[Keys.BLACKLISTED_PACKAGES] ?: defaultBlacklist
+    }
+
+    val darkMode: Flow<Boolean?> = context.dataStore.data.map { prefs ->
+        prefs[Keys.DARK_MODE]
+    }
+
+    suspend fun setDarkMode(isDark: Boolean?) {
+        context.dataStore.edit { prefs ->
+            if (isDark == null) {
+                prefs.remove(Keys.DARK_MODE)
+            } else {
+                prefs[Keys.DARK_MODE] = isDark
+            }
+        }
     }
 
     suspend fun setDefaultDuration(minutes: Int) {

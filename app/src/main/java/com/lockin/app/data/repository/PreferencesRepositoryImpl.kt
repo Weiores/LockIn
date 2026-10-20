@@ -20,6 +20,7 @@ class PreferencesRepositoryImpl @Inject constructor(
     override val soundEnabled: Flow<Boolean> = dataStore.soundEnabled
     override val graceCountdownSeconds: Flow<Int> = dataStore.graceCountdownSeconds
     override val blacklistedPackages: Flow<Set<String>> = dataStore.blacklistedPackages
+    override val darkMode: Flow<Boolean?> = dataStore.darkMode
     override val activeTimerSnapshot: Flow<ActiveTimerSnapshot?> = dataStore.activeTimerSnapshot
 
     override suspend fun setDefaultDuration(minutes: Int) = dataStore.setDefaultDuration(minutes)
@@ -30,6 +31,7 @@ class PreferencesRepositoryImpl @Inject constructor(
     override suspend fun setSoundEnabled(enabled: Boolean) = dataStore.setSoundEnabled(enabled)
     override suspend fun setGraceCountdownSeconds(seconds: Int) = dataStore.setGraceCountdownSeconds(seconds)
     override suspend fun setBlacklistedPackages(packages: Set<String>) = dataStore.setBlacklistedPackages(packages)
+    override suspend fun setDarkMode(isDark: Boolean?) = dataStore.setDarkMode(isDark)
     override suspend fun saveTimerSnapshot(snapshot: ActiveTimerSnapshot) = dataStore.saveTimerSnapshot(snapshot)
     override suspend fun clearTimerSnapshot() = dataStore.clearTimerSnapshot()
 }

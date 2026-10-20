@@ -31,3 +31,4 @@ class EndSessionUseCase @Inject constructor(
         preferencesRepository.clearTimerSnapshot()
     }
 }
+
