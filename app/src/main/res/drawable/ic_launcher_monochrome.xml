@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Themed-icon (Android 13+) layer. The system tints this with the wallpaper
+  palette, so it is a single silhouette — no keyhole, which would vanish at
+  monochrome sizes anyway.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6.5"
+        android:strokeLineCap="round"
+        android:pathData="M42,52 V45.25 A12,12 0 0 1 66,45.25 V52" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M43.5,52 h21 a7.5,7.5 0 0 1 7.5,7.5 v11 a7.5,7.5 0 0 1 -7.5,7.5 h-21 a7.5,7.5 0 0 1 -7.5,-7.5 v-11 a7.5,7.5 0 0 1 7.5,-7.5 z" />
+</vector>

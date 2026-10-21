@@ -10,7 +10,10 @@
              background, and a scrim reads as a pale band in light mode. -->
         <item name="android:enforceStatusBarContrast">false</item>
         <item name="android:enforceNavigationBarContrast">false</item>
-        <!-- Android 12+ system splash: same flat frame the Compose splash opens on. -->
+        <!-- Android 12+ system splash: same flat frame the Compose splash opens on.
+             The icon layer is the bare mark, not the adaptive icon, so the plate
+             never flashes before the Compose lock takes over. -->
         <item name="android:windowSplashScreenBackground">@color/splash_base</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
     </style>
 </resources>
