@@ -80,6 +80,7 @@ import com.lockin.app.ui.theme.GlassRadius
 import com.lockin.app.ui.theme.GlassTokens
 import com.lockin.app.ui.theme.GlassType
 import com.lockin.app.ui.theme.LockInPalette
+import com.lockin.app.ui.theme.LockInSerif
 import com.lockin.app.ui.vault.components.CameraBarcodeScannerView
 import java.time.LocalDate
 import java.time.LocalTime
@@ -110,6 +111,7 @@ fun FocusHubScreen(
     val selectedDurationMinutes by viewModel.selectedDurationMinutes.collectAsState()
     val selectedTriggerProfile by viewModel.selectedTriggerProfile.collectAsState()
     val cardScan by viewModel.cardScan.collectAsState()
+    val armOutcome by viewModel.armOutcome.collectAsState()
     val streakDays by viewModel.streakDays.collectAsState()
     val weeklyFocusByModule by viewModel.weeklyFocusByModule.collectAsState()
     val weekDays by viewModel.lastSevenDays.collectAsState()
@@ -136,6 +138,22 @@ fun FocusHubScreen(
     var showGoalEditor by remember { mutableStateOf(false) }
     var showArmScanner by remember { mutableStateOf(false) }
     var unknownCode by remember { mutableStateOf<String?>(null) }
+    // Set when the scanner was opened by the Start button rather than by the
+    // lock strip: a successful scan then starts the session straight away.
+    var pendingStart by remember { mutableStateOf(false) }
+
+    // A session can only begin once a key is armed, so the start button says so.
+    val startLabel = when {
+        selectedModule == null -> "Add a module first"
+        selectedTriggerProfile == null -> "Scan key to start"
+        else -> "Start session"
+    }
+
+    fun startNow() {
+        viewModel.startSession(context) { sessionId ->
+            onNavigateToActiveSession(sessionId)
+        }
+    }
 
     val estimatedEndTime = remember(selectedDurationMinutes) {
         LocalTime.now()
@@ -179,11 +197,19 @@ fun FocusHubScreen(
                 endTimeLabel = "Ends $estimatedEndTime",
                 selectedDurationMinutes = selectedDurationMinutes,
                 showPresets = !isSessionActive,
+                startLabel = startLabel,
                 onSelectDuration = { viewModel.selectDuration(it) },
                 onEditGoal = { showGoalEditor = true },
                 onStart = {
-                    viewModel.startSession(context) { sessionId ->
-                        onNavigateToActiveSession(sessionId)
+                    when {
+                        selectedModule == null -> onNavigateToCourses()
+                        // No key armed yet — scan first, then the session starts
+                        // itself once the key resolves.
+                        selectedTriggerProfile == null -> {
+                            pendingStart = true
+                            showArmScanner = true
+                        }
+                        else -> startNow()
                     }
                 },
                 onViewSession = {
@@ -193,7 +219,17 @@ fun FocusHubScreen(
                     }
                     if (sessionId > 0L) onNavigateToActiveSession(sessionId)
                 },
-                onStopSession = { showStopDialog = true },
+                onStopSession = {
+                    // Always hand off to the session screen: it owns the unlock
+                    // check and the end-of-session summary. Ending here would
+                    // skip the summary entirely.
+                    val locked = timerState as? TimerState.ActiveLocked
+                    if (locked != null && locked.sessionId > 0L) {
+                        onNavigateToActiveSession(locked.sessionId)
+                    } else {
+                        showStopDialog = true
+                    }
+                },
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -212,27 +248,40 @@ fun FocusHubScreen(
         }
     }
 
+    LaunchedEffect(armOutcome) {
+        when (val outcome = armOutcome) {
+            is ArmOutcome.Armed -> {
+                showArmScanner = false
+                viewModel.stopCardScan()
+                viewModel.consumeArmOutcome()
+                if (pendingStart) {
+                    pendingStart = false
+                    startNow()
+                }
+            }
+            is ArmOutcome.Unknown -> {
+                showArmScanner = false
+                viewModel.stopCardScan()
+                pendingStart = false
+                unknownCode = outcome.value
+                viewModel.consumeArmOutcome()
+            }
+            null -> Unit
+        }
+    }
+
     if (showArmScanner) {
         ArmScanDialog(
             cardValue = cardScan,
+            startsSession = pendingStart,
             onStartCardScan = { activity -> viewModel.startCardScan(activity) },
             onStopCardScan = { viewModel.stopCardScan() },
             onDismiss = {
                 showArmScanner = false
+                pendingStart = false
                 viewModel.stopCardScan()
             },
-            onDetected = { type, value ->
-                val match = viewModel.findTrigger(type, value)
-                if (match != null) {
-                    viewModel.armTrigger(match)
-                    showArmScanner = false
-                    viewModel.stopCardScan()
-                } else {
-                    showArmScanner = false
-                    viewModel.stopCardScan()
-                    unknownCode = value
-                }
-            },
+            onDetected = { type, value -> viewModel.armScannedKey(type, value) },
         )
     }
 
@@ -569,6 +618,7 @@ private fun FocusCard(
     endTimeLabel: String,
     selectedDurationMinutes: Int,
     showPresets: Boolean,
+    startLabel: String,
     onSelectDuration: (Int) -> Unit,
     onEditGoal: () -> Unit,
     onStart: () -> Unit,
@@ -719,7 +769,7 @@ private fun FocusCard(
             }
         } else {
             GlassPrimaryButton(
-                text = "Start Session",
+                text = startLabel,
                 onClick = onStart,
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = when {
@@ -955,6 +1005,7 @@ private fun TriggerType.lockIcon(): ImageVector = when (this) {
 @Composable
 private fun ArmScanDialog(
     cardValue: String?,
+    startsSession: Boolean = false,
     onStartCardScan: (Activity) -> Unit,
     onStopCardScan: () -> Unit,
     onDismiss: () -> Unit,
@@ -998,16 +1049,27 @@ private fun ArmScanDialog(
                 ) {
                     Column {
                         Text(
-                            text = "ARM SESSION",
+                            text = if (startsSession) "START SESSION" else "ARM SESSION",
                             style = GlassType.Eyebrow,
                             color = LockInPalette.TextTertiary,
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = if (mode == TriggerType.NFC) "Tap your card" else "Scan your key",
+                            fontFamily = LockInSerif,
                             fontSize = 22.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Medium,
                             color = LockInPalette.TextPrimary,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (startsSession) {
+                                "The same key ends the session."
+                            } else {
+                                "This key locks the session."
+                            },
+                            fontSize = 12.sp,
+                            color = LockInPalette.TextSecondary,
                         )
                     }
                     Box(

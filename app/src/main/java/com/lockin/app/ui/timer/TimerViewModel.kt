@@ -163,12 +163,15 @@ class TimerViewModel @Inject constructor(
         timerEngine.resumeTimer()
     }
 
+    /**
+     * Ends the session but deliberately leaves the engine in [TimerState.Failed]
+     * so the overlay can show the summary. Resetting to idle here would blow the
+     * summary away and pop the screen twice.
+     */
     fun stopSession(context: Context) {
         stopNfcArmingListener()
         TimerForegroundService.stopService(context)
         timerEngine.stopTimer(FailReason.USER_CANCELLED)
-        timerEngine.resetToIdle()
-        _activeModule.value = null
     }
 
     fun dismiss(context: Context? = null) {

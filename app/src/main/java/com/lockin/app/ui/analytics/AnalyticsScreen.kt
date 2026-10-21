@@ -62,6 +62,7 @@ import com.lockin.app.ui.theme.GlassRadius
 import com.lockin.app.ui.theme.GlassTokens
 import com.lockin.app.ui.theme.GlassType
 import com.lockin.app.ui.theme.LockInPalette
+import com.lockin.app.ui.theme.LockInSerif
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -282,8 +283,9 @@ private fun MetricTile(
             Spacer(modifier = Modifier.width(5.dp))
             Text(
                 text = value,
+                fontFamily = LockInSerif,
                 fontSize = 21.sp,
-                fontWeight = FontWeight.Light,
+                fontWeight = FontWeight.Normal,
                 letterSpacing = (-0.5).sp,
                 color = LockInPalette.TextPrimary,
                 maxLines = 1,

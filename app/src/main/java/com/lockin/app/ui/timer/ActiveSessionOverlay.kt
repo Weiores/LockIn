@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.lockin.app.domain.model.CourseModule
 import com.lockin.app.domain.model.FailReason
 import com.lockin.app.domain.model.TimerState
 import com.lockin.app.domain.model.TriggerType
@@ -74,6 +75,7 @@ import com.lockin.app.ui.theme.GlassRadius
 import com.lockin.app.ui.theme.GlassTokens
 import com.lockin.app.ui.theme.GlassType
 import com.lockin.app.ui.theme.LockInPalette
+import com.lockin.app.ui.theme.LockInSerif
 import com.lockin.app.ui.vault.components.CameraBarcodeScannerView
 import com.lockin.app.util.Constants
 
@@ -101,6 +103,16 @@ fun ActiveSessionOverlay(
     var showUnlockSheet by remember { mutableStateOf(false) }
     var unlockError by remember { mutableStateOf<String?>(null) }
 
+    // Two things can end a session (the stop action and the engine going idle).
+    // Popping twice would pop the hub itself and leave an empty back stack.
+    var leftScreen by remember { mutableStateOf(false) }
+    val leave: () -> Unit = {
+        if (!leftScreen) {
+            leftScreen = true
+            onNavigateBack()
+        }
+    }
+
     LaunchedEffect(sessionId) {
         if (sessionId > 0L) viewModel.loadModuleForSession(sessionId)
     }
@@ -123,7 +135,14 @@ fun ActiveSessionOverlay(
                         onTogglePause = {
                             if (state.isPaused) viewModel.resume() else viewModel.pause()
                         },
-                        onStop = { showStopDialog = true },
+                        onStop = {
+                            if (state.triggerType == TriggerType.BARCODE || state.triggerType == TriggerType.NFC) {
+                                unlockError = null
+                                showUnlockSheet = true
+                            } else {
+                                showStopDialog = true
+                            }
+                        },
                         onUnlockEarly = {
                             unlockError = null
                             showUnlockSheet = true
@@ -141,8 +160,10 @@ fun ActiveSessionOverlay(
                         keyError = keyError,
                         onBarcodeScanned = { viewModel.checkScannedBarcode(it) },
                         onCancel = {
-                            viewModel.stopSession(context)
-                            onNavigateBack()
+                            // Nothing started, so there is no summary to show —
+                            // go straight back to idle.
+                            viewModel.dismiss(context)
+                            leave()
                         },
                         onStartNfcListening = { viewModel.startNfcArmingListener(it) },
                         onStopNfcListening = { viewModel.stopNfcArmingListener() },
@@ -161,11 +182,12 @@ fun ActiveSessionOverlay(
                             } else {
                                 " Zero distractions."
                             },
+                        detail = sessionDetail(state.actualDurationMs, activeModule),
                         accent = LockInPalette.Mint,
                         isFailure = false,
                         onDismiss = {
                             viewModel.dismiss(context)
-                            onNavigateBack()
+                            leave()
                         },
                     )
                 }
@@ -182,18 +204,19 @@ fun ActiveSessionOverlay(
                     SessionResultScreen(
                         title = "Session Ended",
                         message = message,
+                        detail = sessionDetail(state.actualDurationMs, activeModule),
                         accent = LockInPalette.Coral,
                         isFailure = true,
                         onDismiss = {
                             viewModel.dismiss(context)
-                            onNavigateBack()
+                            leave()
                         },
                     )
                 }
             }
 
             SessionPhase.Idle -> {
-                LaunchedEffect(Unit) { onNavigateBack() }
+                LaunchedEffect(Unit) { leave() }
             }
         }
     }
@@ -213,7 +236,6 @@ fun ActiveSessionOverlay(
             if (sessionKey == null || sessionKey.equals(candidate, ignoreCase = true)) {
                 showUnlockSheet = false
                 viewModel.stopSession(context)
-                onNavigateBack()
             } else {
                 unlockError = "That's a different key — this session was opened with " +
                     "${sessionType.displayName.lowercase()} \"${sessionKey?.take(14)}\". Use the same one."
@@ -246,8 +268,9 @@ fun ActiveSessionOverlay(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Unlock Early",
+                                fontFamily = LockInSerif,
                                 fontSize = 22.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Medium,
                                 color = LockInPalette.TextPrimary,
                             )
                         }
@@ -335,7 +358,6 @@ fun ActiveSessionOverlay(
                         onClick = {
                             showUnlockSheet = false
                             viewModel.stopSession(context)
-                            onNavigateBack()
                         },
                         modifier = Modifier.fillMaxWidth(),
                         containerColor = LockInPalette.Coral.copy(alpha = 0.16f),
@@ -381,7 +403,6 @@ fun ActiveSessionOverlay(
                     onClick = {
                         showStopDialog = false
                         viewModel.stopSession(context)
-                        onNavigateBack()
                     },
                 ) {
                     Text("Stop", color = LockInPalette.Coral, fontWeight = FontWeight.Bold)
@@ -455,8 +476,9 @@ private fun ArmingScreen(
                     ) {
                         Text(
                             text = "Scan Checkpoint Barcode",
+                            fontFamily = LockInSerif,
                             fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Medium,
                             color = LockInPalette.TextPrimary,
                         )
                         Text(
@@ -512,8 +534,9 @@ private fun ArmingScreen(
                         }
                         Text(
                             text = "Tap Registered Card",
+                            fontFamily = LockInSerif,
                             fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Medium,
                             color = LockInPalette.TextPrimary,
                         )
                         Text(
@@ -549,8 +572,9 @@ private fun ArmingScreen(
                         }
                         Text(
                             text = "Ready to Lock In",
+                            fontFamily = LockInSerif,
                             fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Medium,
                             color = LockInPalette.TextPrimary,
                         )
                         Text(
@@ -611,6 +635,7 @@ private fun ArmingScreen(
 private fun SessionResultScreen(
     title: String,
     message: String,
+    detail: String,
     accent: Color,
     isFailure: Boolean,
     onDismiss: () -> Unit,
@@ -651,13 +676,32 @@ private fun SessionResultScreen(
 
                     Text(
                         text = title,
+                        fontFamily = LockInSerif,
                         fontSize = 22.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Medium,
                         color = LockInPalette.TextPrimary,
                         textAlign = TextAlign.Center,
                     )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(GlassRadius.Pill))
+                            .background(accent.copy(alpha = 0.12f))
+                            .padding(horizontal = 14.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = detail,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = accent,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
                         text = message,
@@ -699,6 +743,18 @@ private fun SessionResultScreen(
 // ============================================================================
 //  Phase mapping
 // ============================================================================
+
+/** "12m 40s · Data Structures" — how long, and what was studied. */
+private fun sessionDetail(actualDurationMs: Long, module: CourseModule?): String {
+    val safe = actualDurationMs.coerceAtLeast(0L)
+    val minutes = safe / 60_000L
+    val seconds = (safe % 60_000L) / 1000L
+    val duration = if (minutes > 0) "${minutes}m ${seconds}s" else "${seconds}s"
+    val topic = module?.name?.takeIf { it.isNotBlank() }
+        ?: module?.code?.takeIf { it.isNotBlank() }
+        ?: "General focus"
+    return "$duration · $topic"
+}
 
 private enum class SessionPhase { Idle, Arming, Active, Completed, Failed }
 

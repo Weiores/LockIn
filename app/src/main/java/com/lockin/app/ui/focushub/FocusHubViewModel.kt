@@ -39,7 +39,8 @@ import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @HiltViewModel
-class FocusHubViewModel @Inject constructor(    private val moduleRepository: ModuleRepository,
+class FocusHubViewModel @Inject constructor(
+    private val moduleRepository: ModuleRepository,
     private val sessionRepository: SessionRepository,
     private val triggerRepository: TriggerRepository,
     private val preferencesRepository: PreferencesRepository,
@@ -210,11 +211,44 @@ class FocusHubViewModel @Inject constructor(    private val moduleRepository: Mo
         _selectedTriggerType.value = trigger?.type ?: TriggerType.MANUAL
     }
 
+    /**
+     * Result of the last arm scan. The lookup goes to the repository, not to
+     * [savedTriggers] — that flow is `WhileSubscribed`, so its cached value is
+     * empty whenever no screen is collecting it.
+     */
+    private val _armOutcome = MutableStateFlow<ArmOutcome?>(null)
+    val armOutcome: StateFlow<ArmOutcome?> = _armOutcome.asStateFlow()
+
+    fun consumeArmOutcome() {
+        _armOutcome.value = null
+    }
+
     /** Resolve a scanned payload against the saved keys of that type. */
-    fun findTrigger(type: TriggerType, value: String): TriggerProfile? =
-        savedTriggers.value.firstOrNull {
-            it.type == type && it.value.equals(value, ignoreCase = true)
+    fun armScannedKey(type: TriggerType, value: String) {
+        viewModelScope.launch {
+            val needle = value.trim()
+            val match = triggerRepository.findByTypeAndValue(type, needle)
+                ?: looseMatch(type, needle)
+            if (match != null) {
+                armTrigger(match)
+                _armOutcome.value = ArmOutcome.Armed(match)
+            } else {
+                _armOutcome.value = ArmOutcome.Unknown(needle)
+            }
         }
+    }
+
+    /**
+     * Exact match first; this catches keys saved with different casing or
+     * padding than the scanner reports, which would otherwise read as unknown.
+     * `first()` reads the table, not the cached [savedTriggers] value.
+     */
+    private suspend fun looseMatch(type: TriggerType, needle: String): TriggerProfile? {
+        val target = needle.lowercase()
+        return triggerRepository.observeAll().first().firstOrNull {
+            it.type == type && it.value.trim().lowercase() == target
+        }
+    }
 
     // ------------------------------------------------------------ card arming
     private val _cardScan = MutableStateFlow<String?>(null)
@@ -286,6 +320,12 @@ class FocusHubViewModel @Inject constructor(    private val moduleRepository: Mo
         timerEngine.stopTimer(FailReason.USER_CANCELLED)
         timerEngine.resetToIdle()
     }
+}
+
+/** What a scanned arm attempt resolved to. */
+sealed interface ArmOutcome {
+    data class Armed(val trigger: TriggerProfile) : ArmOutcome
+    data class Unknown(val value: String) : ArmOutcome
 }
 
 /** One column of the hub's seven-day strip. */

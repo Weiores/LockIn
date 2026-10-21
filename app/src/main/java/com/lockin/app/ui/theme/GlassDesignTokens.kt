@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -86,6 +87,10 @@ private data class AccentTriple(
     val sky: Color,
     /** Where the sky hands over to paper. */
     val skyFade: Color,
+    /** Middle stop of the wash. */
+    val mid: Color,
+    /** Bottom of the wash — the page the cards sit on. */
+    val bottom: Color,
     /** Bloom colour layered behind the header. */
     val bloom: Color,
 )
@@ -96,6 +101,8 @@ private val BlueAccents = AccentTriple(
     deep = Color(0xFF3E6DF3),
     sky = Color(0xFF0A1018),
     skyFade = Color(0xFF131C2C),
+    mid = Color(0xFF0A1220),
+    bottom = Color(0xFF101A2C),
     bloom = Color(0xFF1B2C4E),
 )
 
@@ -105,6 +112,8 @@ private val GreenAccents = AccentTriple(
     deep = Color(0xFF2E9E77),
     sky = Color(0xFF080F0D),
     skyFade = Color(0xFF111C19),
+    mid = Color(0xFF0A1714),
+    bottom = Color(0xFF0F211C),
     bloom = Color(0xFF16302A),
 )
 
@@ -114,7 +123,45 @@ private val RedAccents = AccentTriple(
     deep = Color(0xFFC43F46),
     sky = Color(0xFF0F0A0C),
     skyFade = Color(0xFF1C1317),
+    mid = Color(0xFF150F12),
+    bottom = Color(0xFF22171B),
     bloom = Color(0xFF33202A),
+)
+
+/** Brass / ochre — warm, ink-on-old-paper. */
+private val AmberAccents = AccentTriple(
+    accent = Color(0xFFE0AE5C),
+    soft = Color(0xFFF0C87E),
+    deep = Color(0xFFB4802F),
+    sky = Color(0xFF12100A),
+    skyFade = Color(0xFF1D1A10),
+    mid = Color(0xFF17140C),
+    bottom = Color(0xFF221D11),
+    bloom = Color(0xFF332A16),
+)
+
+/** Plum — the violet end of the accent range. */
+private val VioletAccents = AccentTriple(
+    accent = Color(0xFFA98BFF),
+    soft = Color(0xFFC4AEFF),
+    deep = Color(0xFF7B57E8),
+    sky = Color(0xFF0D0A16),
+    skyFade = Color(0xFF171227),
+    mid = Color(0xFF110D1D),
+    bottom = Color(0xFF1B1530),
+    bloom = Color(0xFF2A1F4A),
+)
+
+/** Deep teal — cooler than green, calmer than blue. */
+private val TealAccents = AccentTriple(
+    accent = Color(0xFF4FC3C0),
+    soft = Color(0xFF85DAD7),
+    deep = Color(0xFF2A9A97),
+    sky = Color(0xFF07110F),
+    skyFade = Color(0xFF0F1F1D),
+    mid = Color(0xFF0A1815),
+    bottom = Color(0xFF0F221E),
+    bloom = Color(0xFF153430),
 )
 
 /** Light-mode accents are deeper so they hold up on paper. */
@@ -124,6 +171,8 @@ private val BlueAccentsLight = AccentTriple(
     deep = Color(0xFF2748C4),
     sky = Color(0xFF6E9CB6),
     skyFade = Color(0xFFA9C2D3),
+    mid = Color(0xFFDCE5EF),
+    bottom = Color(0xFFFBFCFE),
     bloom = Color(0xFFBFD6E4),
 )
 
@@ -133,6 +182,8 @@ private val GreenAccentsLight = AccentTriple(
     deep = Color(0xFF1F7657),
     sky = Color(0xFF6E9A8B),
     skyFade = Color(0xFFA9C4B8),
+    mid = Color(0xFFDAE7E1),
+    bottom = Color(0xFFF9FCFB),
     bloom = Color(0xFFC4DACE),
 )
 
@@ -142,13 +193,51 @@ private val RedAccentsLight = AccentTriple(
     deep = Color(0xFFA82F36),
     sky = Color(0xFF9C8187),
     skyFade = Color(0xFFC9B6B9),
+    mid = Color(0xFFE9DEE0),
+    bottom = Color(0xFFFDFBFC),
     bloom = Color(0xFFE2CFD2),
+)
+
+private val AmberAccentsLight = AccentTriple(
+    accent = Color(0xFFB4802F),
+    soft = Color(0xFFD2A45E),
+    deep = Color(0xFF8A5F1E),
+    sky = Color(0xFFB99A62),
+    skyFade = Color(0xFFD8C9A6),
+    mid = Color(0xFFEBE3D3),
+    bottom = Color(0xFFFDFBF5),
+    bloom = Color(0xFFE8DCC2),
+)
+
+private val VioletAccentsLight = AccentTriple(
+    accent = Color(0xFF6B4FD1),
+    soft = Color(0xFF9A85E8),
+    deep = Color(0xFF4E36A6),
+    sky = Color(0xFF8F82BE),
+    skyFade = Color(0xFFC0B7DD),
+    mid = Color(0xFFE2DDEF),
+    bottom = Color(0xFFFBFAFE),
+    bloom = Color(0xFFD8CFEE),
+)
+
+private val TealAccentsLight = AccentTriple(
+    accent = Color(0xFF1F8B88),
+    soft = Color(0xFF55B3B0),
+    deep = Color(0xFF146360),
+    sky = Color(0xFF6E9C9A),
+    skyFade = Color(0xFFA6C6C3),
+    mid = Color(0xFFD6E6E4),
+    bottom = Color(0xFFF8FCFB),
+    bloom = Color(0xFFC6E0DE),
 )
 
 private fun accentsFor(scheme: AccentScheme, isDark: Boolean): AccentTriple = when (scheme) {
     AccentScheme.BLUE -> if (isDark) BlueAccents else BlueAccentsLight
     AccentScheme.GREEN -> if (isDark) GreenAccents else GreenAccentsLight
     AccentScheme.RED -> if (isDark) RedAccents else RedAccentsLight
+    AccentScheme.AMBER -> if (isDark) AmberAccents else AmberAccentsLight
+    AccentScheme.VIOLET -> if (isDark) VioletAccents else VioletAccentsLight
+    AccentScheme.TEAL -> if (isDark) TealAccents else TealAccentsLight
 }
 
 /**
@@ -162,16 +251,16 @@ fun lockInColors(scheme: AccentScheme, isDark: Boolean): LockInColors {
         LockInColors(
             isDark = true,
             canvasTop = a.sky,
-            canvasMid = Color(0xFF0A1220),
-            canvasBottom = Color(0xFF101A2C),
+            canvasMid = a.mid,
+            canvasBottom = a.bottom,
             ambientPrimary = a.bloom,
             ambientSecondary = a.bloom,
             ambientAlert = Color(0xFF2A1619),
-            glassTop = Color(0xFF161E2D),
-            glassBase = Color(0xFF131A27),
-            glassBottom = Color(0xFF0F1622),
-            navSurface = Color(0xFF131A27),
-            sheetSurface = Color(0xFF141C2A),
+            glassTop = blend(a.bottom, Color.White, 0.07f),
+            glassBase = blend(a.bottom, Color.White, 0.045f),
+            glassBottom = blend(a.bottom, Color.Black, 0.02f),
+            navSurface = blend(a.bottom, Color.White, 0.045f),
+            sheetSurface = blend(a.bottom, Color.White, 0.06f),
             accent = a.accent,
             accentSoft = a.soft,
             accentDeep = a.deep,
@@ -193,16 +282,16 @@ fun lockInColors(scheme: AccentScheme, isDark: Boolean): LockInColors {
         LockInColors(
             isDark = false,
             canvasTop = a.sky,
-            canvasMid = Color(0xFFDCE5EF),
-            canvasBottom = Color(0xFFFBFCFE),
+            canvasMid = a.mid,
+            canvasBottom = a.bottom,
             ambientPrimary = a.bloom,
             ambientSecondary = a.bloom,
             ambientAlert = Color(0xFFF3DDE0),
-            glassTop = Color(0xFFFFFFFF),
-            glassBase = Color(0xFFFCFDFF),
-            glassBottom = Color(0xFFF6F8FC),
-            navSurface = Color(0xFFFFFFFF),
-            sheetSurface = Color(0xFFFFFFFF),
+            glassTop = Color.White,
+            glassBase = blend(a.bottom, Color.White, 0.72f),
+            glassBottom = blend(a.bottom, Color.White, 0.55f),
+            navSurface = Color.White,
+            sheetSurface = Color.White,
             accent = a.accent,
             accentSoft = a.soft,
             accentDeep = a.deep,
@@ -418,13 +507,13 @@ private fun blend(from: Color, to: Color, fraction: Float): Color {
 /** Typography used by the surfaces (big, quiet headings; small dense labels). */
 object GlassType {
 
-    /** Page title, e.g. "Today". Light weight, tight tracking. */
+    /** Page title, e.g. "Today". Editorial serif, tight tracking. */
     val Display = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = LockInSerif,
         fontWeight = FontWeight.Normal,
-        fontSize = 34.sp,
-        lineHeight = 40.sp,
-        letterSpacing = (-1.2).sp,
+        fontSize = 36.sp,
+        lineHeight = 42.sp,
+        letterSpacing = (-0.9).sp,
     )
 
     /** Tiny tracked-out label, e.g. "TODAY'S FOCUS". */
@@ -447,11 +536,11 @@ object GlassType {
 
     /** Headline inside a card, e.g. the module name. */
     val CardTitle = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 23.sp,
-        lineHeight = 28.sp,
-        letterSpacing = (-0.6).sp,
+        fontFamily = LockInSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 24.sp,
+        lineHeight = 30.sp,
+        letterSpacing = (-0.3).sp,
     )
 
     /** Running copy inside a card. */
@@ -465,46 +554,47 @@ object GlassType {
 
     /** Hero countdown numerals. */
     val HeroTimer = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Light,
-        fontSize = 56.sp,
-        lineHeight = 60.sp,
-        letterSpacing = (-2).sp,
+        fontFamily = LockInSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 58.sp,
+        lineHeight = 62.sp,
+        letterSpacing = (-1.6).sp,
     )
 
     /** Giant overlay numerals (Active Locked). */
     val GiantTimer = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Light,
-        fontSize = 84.sp,
-        lineHeight = 88.sp,
-        letterSpacing = (-3).sp,
+        fontFamily = LockInSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 88.sp,
+        lineHeight = 92.sp,
+        letterSpacing = (-2.6).sp,
     )
 
     /** Screen title, e.g. "Trigger Vault". */
     val ScreenTitle = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = LockInSerif,
         fontWeight = FontWeight.Normal,
-        fontSize = 30.sp,
-        lineHeight = 36.sp,
-        letterSpacing = (-0.8).sp,
+        fontSize = 32.sp,
+        lineHeight = 38.sp,
+        letterSpacing = (-0.5).sp,
     )
 
     /** Large metric value, e.g. "24.5h". */
     val MetricValue = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = LockInSerif,
         fontWeight = FontWeight.Normal,
-        fontSize = 24.sp,
-        lineHeight = 28.sp,
-        letterSpacing = (-0.6).sp,
+        fontSize = 26.sp,
+        lineHeight = 30.sp,
+        letterSpacing = (-0.3).sp,
     )
 
     /** Italic serif whisper line. */
     val Whisper = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = LockInSerif,
         fontWeight = FontWeight.Normal,
+        fontStyle = FontStyle.Italic,
         fontSize = 13.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 0.2.sp,
+        lineHeight = 19.sp,
+        letterSpacing = 0.1.sp,
     )
 }

@@ -8,6 +8,9 @@ enum class AccentScheme(val label: String) {
     BLUE("Blue"),
     GREEN("Green"),
     RED("Red"),
+    AMBER("Amber"),
+    VIOLET("Violet"),
+    TEAL("Teal"),
 }
 
 /** Whether the app follows the system appearance or is pinned to a mode. */

@@ -87,11 +87,9 @@ class UserPreferencesDataStore @Inject constructor(
     }
 
     val accentScheme: Flow<AccentScheme> = context.dataStore.data.map { prefs ->
-        when (prefs[Keys.ACCENT_SCHEME]) {
-            AccentScheme.GREEN.name -> AccentScheme.GREEN
-            AccentScheme.RED.name -> AccentScheme.RED
-            else -> AccentScheme.BLUE
-        }
+        // Resolve by name so adding a scheme never silently falls back to BLUE.
+        val stored = prefs[Keys.ACCENT_SCHEME]
+        AccentScheme.entries.firstOrNull { it.name == stored } ?: AccentScheme.BLUE
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
