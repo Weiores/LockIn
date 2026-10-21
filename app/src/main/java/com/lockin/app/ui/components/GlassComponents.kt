@@ -86,6 +86,12 @@ fun LockInAmbientBackground(
     glowSecondary: Color = LockInPalette.AmbientSecondary,
     baseTop: Color = LockInPalette.Obsidian,
     baseBottom: Color = LockInPalette.Midnight,
+    /**
+     * The wash itself is painted once, at window level, so it runs behind the
+     * status bar without a seam. Screens that only need their own bloom on top
+     * of it pass `false`.
+     */
+    drawWash: Boolean = true,
 ) {
     val isDark = LockInPalette.IsDark
     val wash = GlassTokens.Canvas
@@ -93,7 +99,7 @@ fun LockInAmbientBackground(
     val glowAlphaSecondary = if (isDark) 0.30f else 0.45f
 
     Canvas(modifier = modifier.fillMaxSize()) {
-        drawRect(brush = wash)
+        if (drawWash) drawRect(brush = wash)
 
         // Sky bloom behind the header
         drawRect(

@@ -57,7 +57,6 @@ import com.lockin.app.ui.components.GlassDivider
 import com.lockin.app.ui.components.GlassIconButton
 import com.lockin.app.ui.components.GlassMicroLabel
 import com.lockin.app.ui.components.GlassPill
-import com.lockin.app.ui.components.LockInAmbientBackground
 import com.lockin.app.ui.components.StatusDot
 import com.lockin.app.ui.theme.GlassRadius
 import com.lockin.app.ui.theme.GlassTokens
@@ -106,7 +105,6 @@ fun AnalyticsScreen(
     val weeklyKeys = summary.dailyFocusMs.keys.toList()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LockInAmbientBackground()
 
         LazyColumn(
             modifier = Modifier

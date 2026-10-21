@@ -1,5 +1,6 @@
 package com.lockin.app.ui.focushub
 
+import android.app.Activity
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,11 +16,13 @@ import com.lockin.app.domain.repository.PreferencesRepository
 import com.lockin.app.domain.repository.SessionRepository
 import com.lockin.app.domain.repository.TriggerRepository
 import com.lockin.app.domain.usecase.StartSessionUseCase
+import com.lockin.app.hardware.nfc.NfcCardReader
 import com.lockin.app.hardware.wifi.WifiZoneDetector
 import com.lockin.app.hardware.wifi.WifiZoneInfo
 import com.lockin.app.service.TimerEngine
 import com.lockin.app.service.TimerForegroundService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +46,7 @@ class FocusHubViewModel @Inject constructor(    private val moduleRepository: Mo
     private val startSessionUseCase: StartSessionUseCase,
     private val timerEngine: TimerEngine,
     private val wifiZoneDetector: WifiZoneDetector,
+    private val nfcCardReader: NfcCardReader,
 ) : ViewModel() {
 
     val timerState: StateFlow<TimerState> = timerEngine.timerState
@@ -195,6 +199,46 @@ class FocusHubViewModel @Inject constructor(    private val moduleRepository: Mo
     fun selectTriggerType(triggerType: TriggerType) {
         _selectedTriggerType.value = triggerType
         _selectedTriggerProfile.value = null
+    }
+
+    /**
+     * Arm the session with a specific saved key. The key's own type becomes the
+     * lock type — there is no separate picker on the hub any more.
+     */
+    fun armTrigger(trigger: TriggerProfile?) {
+        _selectedTriggerProfile.value = trigger
+        _selectedTriggerType.value = trigger?.type ?: TriggerType.MANUAL
+    }
+
+    /** Resolve a scanned payload against the saved keys of that type. */
+    fun findTrigger(type: TriggerType, value: String): TriggerProfile? =
+        savedTriggers.value.firstOrNull {
+            it.type == type && it.value.equals(value, ignoreCase = true)
+        }
+
+    // ------------------------------------------------------------ card arming
+    private val _cardScan = MutableStateFlow<String?>(null)
+    val cardScan: StateFlow<String?> = _cardScan.asStateFlow()
+
+    private var nfcJob: Job? = null
+
+    /** Reader mode is only live while the arm sheet is open on the card tab. */
+    fun startCardScan(activity: Activity) {
+        nfcJob?.cancel()
+        _cardScan.value = null
+        nfcJob = viewModelScope.launch {
+            nfcCardReader.observeCardUid(activity).collect { uid -> _cardScan.value = uid }
+        }
+    }
+
+    fun stopCardScan() {
+        nfcJob?.cancel()
+        nfcJob = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopCardScan()
     }
 
     fun selectSavedTrigger(trigger: TriggerProfile) {

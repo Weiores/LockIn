@@ -58,3 +58,6 @@ Thumbs.db
 .workbuddy-ai/
 
 
+
+# Kotlin session data
+.kotlin

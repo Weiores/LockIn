@@ -77,6 +77,21 @@ class TimerViewModel @Inject constructor(
 
     private var nfcJob: Job? = null
 
+    /**
+     * Why the last start/stop key was rejected. The screens surface this instead
+     * of failing silently.
+     */
+    private val _keyError = MutableStateFlow<String?>(null)
+    val keyError: StateFlow<String?> = _keyError.asStateFlow()
+
+    fun clearKeyError() {
+        _keyError.value = null
+    }
+
+    /** Raw card-UID stream, used by the unlock sheet to match the starting key. */
+    fun observeCardUid(activity: Activity): kotlinx.coroutines.flow.Flow<String> =
+        nfcCardReader.observeCardUid(activity)
+
     init {
         checkSessionRecovery()
     }
@@ -106,11 +121,14 @@ class TimerViewModel @Inject constructor(
 
     fun startNfcArmingListener(activity: Activity) {
         nfcJob?.cancel()
+        _keyError.value = null
         nfcJob = viewModelScope.launch {
             nfcCardReader.observeCardUid(activity).collect { uid ->
                 val expectedValue = activeTriggerValue
                 if (expectedValue == null || expectedValue.equals(uid, ignoreCase = true)) {
                     unlockArmingTrigger()
+                } else {
+                    _keyError.value = "That card doesn't match the one you armed."
                 }
             }
         }
@@ -123,10 +141,12 @@ class TimerViewModel @Inject constructor(
 
     fun checkScannedBarcode(scannedValue: String): Boolean {
         val expectedValue = activeTriggerValue
-        if (expectedValue == null || expectedValue == scannedValue) {
+        if (expectedValue == null || expectedValue.equals(scannedValue, ignoreCase = true)) {
+            _keyError.value = null
             unlockArmingTrigger()
             return true
         }
+        _keyError.value = "That barcode doesn't match the one you armed."
         return false
     }
 

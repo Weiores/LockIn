@@ -25,18 +25,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contactless
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import android.app.Activity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,24 +61,32 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.lockin.app.domain.model.CourseModule
 import com.lockin.app.domain.model.TimerState
 import com.lockin.app.domain.model.TriggerProfile
 import com.lockin.app.domain.model.TriggerType
+import com.lockin.app.domain.model.displayName
 import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.components.GlassCard
 import com.lockin.app.ui.components.GlassPrimaryButton
-import com.lockin.app.ui.components.LockInAmbientBackground
 import com.lockin.app.ui.theme.GlassRadius
+import com.lockin.app.ui.theme.GlassTokens
 import com.lockin.app.ui.theme.GlassType
 import com.lockin.app.ui.theme.LockInPalette
+import com.lockin.app.ui.vault.components.CameraBarcodeScannerView
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+
+/** Diameter of the header ring — the settings gear uses the same box so the two line up. */
+private val RingDiameter = 46.dp
 
 /**
  * Screen 1 — Today.
@@ -86,6 +99,7 @@ fun FocusHubScreen(
     onNavigateToActiveSession: (Long) -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToCourses: () -> Unit = {},
+    onNavigateToVault: () -> Unit = {},
     viewModel: FocusHubViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -94,9 +108,8 @@ fun FocusHubScreen(
     val modules by viewModel.modules.collectAsState()
     val selectedModule by viewModel.selectedModule.collectAsState()
     val selectedDurationMinutes by viewModel.selectedDurationMinutes.collectAsState()
-    val selectedTriggerType by viewModel.selectedTriggerType.collectAsState()
     val selectedTriggerProfile by viewModel.selectedTriggerProfile.collectAsState()
-    val savedTriggers by viewModel.savedTriggers.collectAsState()
+    val cardScan by viewModel.cardScan.collectAsState()
     val streakDays by viewModel.streakDays.collectAsState()
     val weeklyFocusByModule by viewModel.weeklyFocusByModule.collectAsState()
     val weekDays by viewModel.lastSevenDays.collectAsState()
@@ -121,6 +134,8 @@ fun FocusHubScreen(
 
     var showStopDialog by remember { mutableStateOf(false) }
     var showGoalEditor by remember { mutableStateOf(false) }
+    var showArmScanner by remember { mutableStateOf(false) }
+    var unknownCode by remember { mutableStateOf<String?>(null) }
 
     val estimatedEndTime = remember(selectedDurationMinutes) {
         LocalTime.now()
@@ -129,8 +144,6 @@ fun FocusHubScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LockInAmbientBackground()
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -185,25 +198,80 @@ fun FocusHubScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            LockModeRow(
-                selectedTriggerType = selectedTriggerType,
-                onSelectTriggerType = { viewModel.selectTriggerType(it) },
+            // The lock type is whatever key is armed — one strip, no picker.
+            LockStrip(
+                armedTrigger = selectedTriggerProfile,
+                locked = isSessionActive,
+                onScan = { showArmScanner = true },
+                onClear = { viewModel.armTrigger(null) },
             )
-
-            val matchingKeys = savedTriggers.filter { it.type == selectedTriggerType }
-            if (!isSessionActive && selectedTriggerType != TriggerType.MANUAL && matchingKeys.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                SavedKeyRail(
-                    keys = matchingKeys,
-                    selectedKey = selectedTriggerProfile,
-                    onSelectKey = { viewModel.selectSavedTrigger(it) },
-                )
-            }
 
             Spacer(modifier = Modifier.height(26.dp))
 
             WeekStrip(days = weekDays)
         }
+    }
+
+    if (showArmScanner) {
+        ArmScanDialog(
+            cardValue = cardScan,
+            onStartCardScan = { activity -> viewModel.startCardScan(activity) },
+            onStopCardScan = { viewModel.stopCardScan() },
+            onDismiss = {
+                showArmScanner = false
+                viewModel.stopCardScan()
+            },
+            onDetected = { type, value ->
+                val match = viewModel.findTrigger(type, value)
+                if (match != null) {
+                    viewModel.armTrigger(match)
+                    showArmScanner = false
+                    viewModel.stopCardScan()
+                } else {
+                    showArmScanner = false
+                    viewModel.stopCardScan()
+                    unknownCode = value
+                }
+            },
+        )
+    }
+
+    val pendingCode = unknownCode
+    if (pendingCode != null) {
+        AlertDialog(
+            onDismissRequest = { unknownCode = null },
+            title = {
+                Text(
+                    text = "Unregistered code",
+                    fontWeight = FontWeight.Bold,
+                    color = LockInPalette.TextPrimary,
+                )
+            },
+            text = {
+                Text(
+                    text = "$pendingCode isn't a saved key yet. Register it in the Trigger Vault?",
+                    color = LockInPalette.TextSecondary,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        unknownCode = null
+                        onNavigateToVault()
+                    },
+                ) {
+                    Text("Register", color = LockInPalette.Cyan, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { unknownCode = null }) {
+                    Text("Not now", color = LockInPalette.TextSecondary)
+                }
+            },
+            containerColor = LockInPalette.SheetSurface,
+            titleContentColor = LockInPalette.TextPrimary,
+            textContentColor = LockInPalette.TextSecondary,
+        )
     }
 
     if (showGoalEditor) {
@@ -294,29 +362,30 @@ private fun HubHeader(
             )
         }
 
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .clip(RoundedCornerShape(11.dp))
-                .background(LockInPalette.SurfaceTint.copy(alpha = 0.10f))
-                .clickable(onClick = onOpenSettings),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Settings,
-                contentDescription = "Settings",
-                tint = ink.copy(alpha = 0.85f),
-                modifier = Modifier.size(16.dp),
+        // Gear and ring live in one row, top aligned, and the gear's touch box is
+        // the same 46dp as the ring — so their centres sit on the same line.
+        Row(verticalAlignment = Alignment.Top) {
+            Box(
+                modifier = Modifier
+                    .size(RingDiameter)
+                    .clip(CircleShape)
+                    .clickable(onClick = onOpenSettings),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                    tint = ink.copy(alpha = 0.90f),
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            WeekRing(
+                fraction = if (hasGoal) goalFraction else (streakDays / 7f).coerceIn(0f, 1f),
+                centerLabel = if (hasGoal) "${(goalFraction * 100).toInt()}%" else "${streakDays}d",
+                caption = if (hasGoal) "GOAL" else "STREAK",
             )
         }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        WeekRing(
-            fraction = if (hasGoal) goalFraction else (streakDays / 7f).coerceIn(0f, 1f),
-            centerLabel = if (hasGoal) "${(goalFraction * 100).toInt()}%" else "${streakDays}d",
-            caption = if (hasGoal) "GOAL" else "STREAK",
-        )
     }
 }
 
@@ -333,7 +402,7 @@ private fun WeekRing(
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.Center) {
-            Canvas(modifier = Modifier.size(46.dp)) {
+            Canvas(modifier = Modifier.size(RingDiameter)) {
                 val stroke = 2.5.dp.toPx()
                 val radius = (size.minDimension - stroke) / 2f
                 val topLeft = Offset(center.x - radius, center.y - radius)
@@ -759,14 +828,23 @@ private fun DurationChip(minutes: Int, selected: Boolean, onClick: () -> Unit) {
 }
 
 // ============================================================================
-//  Lock mode row — the single line under the card
+//  Lock strip — what key is armed, and the scan that arms it
 // ============================================================================
 
+/**
+ * One line, one idea: which key will arm the next session. No type picker —
+ * the key you scan decides the lock type.
+ */
 @Composable
-private fun LockModeRow(
-    selectedTriggerType: TriggerType,
-    onSelectTriggerType: (TriggerType) -> Unit,
+private fun LockStrip(
+    armedTrigger: TriggerProfile?,
+    locked: Boolean,
+    onScan: () -> Unit,
+    onClear: () -> Unit,
 ) {
+    val ink = LockInPalette.HeaderInk
+    val shape = RoundedCornerShape(GlassRadius.Pill)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -782,150 +860,286 @@ private fun LockModeRow(
 
         Spacer(modifier = Modifier.width(1.dp))
 
-        ModeChip(
-            icon = Icons.Filled.PlayArrow,
-            label = "Manual",
-            selected = selectedTriggerType == TriggerType.MANUAL,
-            onClick = { onSelectTriggerType(TriggerType.MANUAL) },
-        )
-        ModeChip(
-            icon = Icons.Filled.QrCodeScanner,
-            label = "Barcode",
-            selected = selectedTriggerType == TriggerType.BARCODE,
-            onClick = { onSelectTriggerType(TriggerType.BARCODE) },
-        )
-        ModeChip(
-            icon = Icons.Filled.Contactless,
-            label = "Card",
-            selected = selectedTriggerType == TriggerType.NFC,
-            onClick = { onSelectTriggerType(TriggerType.NFC) },
-        )
+        if (armedTrigger == null) {
+            Row(
+                modifier = Modifier
+                    .clip(shape)
+                    .drawDashedBorder(ink.copy(alpha = 0.35f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onScan,
+                    )
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.QrCodeScanner,
+                    contentDescription = null,
+                    tint = ink.copy(alpha = 0.85f),
+                    modifier = Modifier.size(12.dp),
+                )
+                Text(
+                    text = "Scan a key",
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = ink.copy(alpha = 0.85f),
+                    maxLines = 1,
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .clip(shape)
+                    .background(LockInPalette.Cyan.copy(alpha = 0.12f))
+                    .border(
+                        width = 1.dp,
+                        brush = GlassTokens.rimLight(LockInPalette.Cyan),
+                        shape = shape,
+                    )
+                    .padding(start = 11.dp, end = 5.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    imageVector = armedTrigger.type.lockIcon(),
+                    contentDescription = armedTrigger.type.displayName,
+                    tint = LockInPalette.Cyan,
+                    modifier = Modifier.size(12.dp),
+                )
+                Text(
+                    text = "${armedTrigger.type.displayName} · ${armedTrigger.label}",
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = LockInPalette.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .clickable(
+                            enabled = !locked,
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onClear,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Disarm key",
+                        tint = LockInPalette.TextTertiary,
+                        modifier = Modifier.size(11.dp),
+                    )
+                }
+            }
+        }
     }
 }
 
+private fun TriggerType.lockIcon(): ImageVector = when (this) {
+    TriggerType.BARCODE -> Icons.Filled.QrCodeScanner
+    TriggerType.NFC -> Icons.Filled.Contactless
+    TriggerType.WIFI -> Icons.Filled.Wifi
+    TriggerType.MANUAL -> Icons.Filled.PlayArrow
+}
+
+/**
+ * Sheet used to arm a session: barcode or card, whichever the key is. It only
+ * resolves — saving a new key is the Trigger Vault's job.
+ */
 @Composable
-private fun ModeChip(
+private fun ArmScanDialog(
+    cardValue: String?,
+    onStartCardScan: (Activity) -> Unit,
+    onStopCardScan: () -> Unit,
+    onDismiss: () -> Unit,
+    onDetected: (TriggerType, String) -> Unit,
+) {
+    val activity = LocalContext.current as? Activity
+    var mode by remember { mutableStateOf(TriggerType.BARCODE) }
+    val accent = if (mode == TriggerType.NFC) LockInPalette.Mint else LockInPalette.Cyan
+
+    LaunchedEffect(mode) {
+        if (mode == TriggerType.NFC && activity != null) onStartCardScan(activity) else onStopCardScan()
+    }
+
+    LaunchedEffect(cardValue) {
+        val value = cardValue
+        if (mode == TriggerType.NFC && value != null) onDetected(TriggerType.NFC, value)
+    }
+
+    DisposableEffect(Unit) { onDispose { onStopCardScan() } }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(LockInPalette.SheetSurface.copy(alpha = 0.98f)),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text(
+                            text = "ARM SESSION",
+                            style = GlassType.Eyebrow,
+                            color = LockInPalette.TextTertiary,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (mode == TriggerType.NFC) "Tap your card" else "Scan your key",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = LockInPalette.TextPrimary,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(LockInPalette.SurfaceTint.copy(alpha = 0.06f))
+                            .clickable(onClick = onDismiss),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = LockInPalette.TextSecondary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ArmModeChip(
+                        icon = Icons.Filled.QrCodeScanner,
+                        label = "Barcode",
+                        selected = mode == TriggerType.BARCODE,
+                        onClick = { mode = TriggerType.BARCODE },
+                    )
+                    ArmModeChip(
+                        icon = Icons.Filled.Contactless,
+                        label = "Card",
+                        selected = mode == TriggerType.NFC,
+                        onClick = { mode = TriggerType.NFC },
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(
+                            if (mode == TriggerType.NFC) {
+                                accent.copy(alpha = 0.08f)
+                            } else {
+                                Color.Black
+                            },
+                        )
+                        .border(
+                            width = 1.dp,
+                            brush = GlassTokens.rimLight(accent),
+                            shape = RoundedCornerShape(24.dp),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (mode == TriggerType.NFC) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Filled.Contactless,
+                                contentDescription = "Tap card",
+                                tint = accent,
+                                modifier = Modifier.size(52.dp),
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Text(
+                                text = "Hold the card against the back of the phone",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = LockInPalette.TextSecondary,
+                            )
+                        }
+                    } else {
+                        CameraBarcodeScannerView(
+                            onBarcodeDetected = { value -> onDetected(TriggerType.BARCODE, value) },
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Only keys you have already registered can be armed.",
+                    fontSize = 11.5.sp,
+                    color = LockInPalette.TextTertiary,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+/** Small two-state chip used inside the arm sheet. */
+@Composable
+private fun ArmModeChip(
     icon: ImageVector,
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(GlassRadius.Pill)
-    val ink = LockInPalette.InkButton
-    val onInk = LockInPalette.OnInkButton
+    val accent = if (selected) LockInPalette.Cyan else LockInPalette.TextTertiary
 
     Row(
         modifier = Modifier
             .clip(shape)
             .background(
-                if (selected) {
-                    Brush.verticalGradient(listOf(ink, ink))
-                } else {
-                    Brush.verticalGradient(
-                        listOf(
-                            LockInPalette.SurfaceTint.copy(alpha = 0.05f),
-                            LockInPalette.SurfaceTint.copy(alpha = 0.03f),
-                        ),
-                    )
-                },
+                if (selected) LockInPalette.Cyan.copy(alpha = 0.12f) else LockInPalette.SurfaceTint.copy(alpha = 0.05f),
             )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
+            .border(
+                width = 1.dp,
+                color = if (selected) LockInPalette.Cyan.copy(alpha = 0.30f) else LockInPalette.SurfaceTint.copy(alpha = 0.10f),
+                shape = shape,
             )
-            .padding(horizontal = 11.dp, vertical = 7.dp),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = label,
-            tint = if (selected) onInk else LockInPalette.TextTertiary,
-            modifier = Modifier.size(12.dp),
+            contentDescription = null,
+            tint = accent,
+            modifier = Modifier.size(13.dp),
         )
         Text(
             text = label,
-            fontSize = 10.5.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            color = if (selected) onInk else LockInPalette.TextSecondary,
-            maxLines = 1,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = accent,
         )
-    }
-}
-
-// ============================================================================
-//  Saved key rail (only when a physical trigger is selected)
-// ============================================================================
-
-@Composable
-private fun SavedKeyRail(
-    keys: List<TriggerProfile>,
-    selectedKey: TriggerProfile?,
-    onSelectKey: (TriggerProfile) -> Unit,
-) {
-    LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 38.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items(keys, key = { it.id }) { key ->
-            val isSelected = selectedKey?.id == key.id
-            val shape = RoundedCornerShape(GlassRadius.Pill)
-
-            Row(
-                modifier = Modifier
-                    .clip(shape)
-                    .background(
-                        if (isSelected) {
-                            LockInPalette.Cyan.copy(alpha = 0.10f)
-                        } else {
-                            Color.Transparent
-                        },
-                    )
-                    .border(
-                        width = 1.dp,
-                        brush = if (isSelected) {
-                            Brush.verticalGradient(
-                                listOf(
-                                    LockInPalette.Cyan.copy(alpha = 0.35f),
-                                    LockInPalette.Cyan.copy(alpha = 0.12f),
-                                ),
-                            )
-                        } else {
-                            Brush.verticalGradient(
-                                listOf(
-                                    LockInPalette.SurfaceTint.copy(alpha = 0.10f),
-                                    LockInPalette.SurfaceTint.copy(alpha = 0.05f),
-                                ),
-                            )
-                        },
-                        shape = shape,
-                    )
-                    .clickable { onSelectKey(key) }
-                    .padding(horizontal = 11.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(4.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isSelected) LockInPalette.Cyan else LockInPalette.TextTertiary,
-                        ),
-                )
-                Text(
-                    text = key.label,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (isSelected) LockInPalette.TextPrimary else LockInPalette.TextSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
     }
 }
 

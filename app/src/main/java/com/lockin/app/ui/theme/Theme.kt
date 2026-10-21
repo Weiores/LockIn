@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.lockin.app.domain.model.AccentScheme
@@ -48,12 +47,23 @@ fun LockInTheme(
         SideEffect {
             val activity = view.context as? Activity ?: return@SideEffect
             val window = activity.window
-            // The top of the page is always a tinted sky, so the status icons
-            // stay light in both modes; the navigation bar follows the paper.
-            window.statusBarColor = colors.canvasTop.toArgb()
-            window.navigationBarColor = colors.canvasBottom.toArgb()
+            // Both bars stay transparent: the page wash is painted at window
+            // level, so it runs edge to edge behind the status and nav bars
+            // instead of stopping at a solid band.
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+
+            // Android adds a contrast scrim over a transparent status bar when
+            // this is left at its default (true) — in light mode that scrim is
+            // white, which is the pale band that hid the clock. Opt out of both
+            // so the wash is what actually shows.
+            window.isStatusBarContrastEnforced = false
+            window.isNavigationBarContrastEnforced = false
+
             WindowCompat.getInsetsController(window, view).apply {
-                isAppearanceLightStatusBars = false
+                // The sky is a mid tone: ink icons read at ~4.3:1 in light mode,
+                // white would sit at ~2.7:1. Icons follow the mode.
+                isAppearanceLightStatusBars = !colors.isDark
                 isAppearanceLightNavigationBars = !colors.isDark
             }
         }

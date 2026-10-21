@@ -58,7 +58,6 @@ import com.lockin.app.ui.components.GlassBadge
 import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.components.GlassCard
 import com.lockin.app.ui.components.GlassMicroLabel
-import com.lockin.app.ui.components.LockInAmbientBackground
 import com.lockin.app.ui.theme.GlassRadius
 import com.lockin.app.ui.theme.GlassType
 import com.lockin.app.ui.theme.LockInPalette
@@ -88,8 +87,6 @@ fun NotesScreen(
     var composerNote by remember { mutableStateOf<WeeklyNote?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LockInAmbientBackground()
-
         Column(
             modifier = Modifier
                 .fillMaxSize()

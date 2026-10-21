@@ -62,6 +62,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.lockin.app.domain.model.FailReason
 import com.lockin.app.domain.model.TimerState
 import com.lockin.app.domain.model.TriggerType
+import com.lockin.app.domain.model.displayName
 import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.components.GlassCard
 import com.lockin.app.ui.components.GlassMicroLabel
@@ -93,6 +94,8 @@ fun ActiveSessionOverlay(
     val timerState by viewModel.timerState.collectAsState()
     val activeModule by viewModel.activeModule.collectAsState()
     val activeGoal by viewModel.activeModuleGoal.collectAsState()
+
+    val keyError by viewModel.keyError.collectAsState()
 
     var showStopDialog by remember { mutableStateOf(false) }
     var showUnlockSheet by remember { mutableStateOf(false) }
@@ -135,6 +138,7 @@ fun ActiveSessionOverlay(
                     ArmingScreen(
                         state = state,
                         activity = activity,
+                        keyError = keyError,
                         onBarcodeScanned = { viewModel.checkScannedBarcode(it) },
                         onCancel = {
                             viewModel.stopSession(context)
@@ -196,6 +200,26 @@ fun ActiveSessionOverlay(
 
     // ------------------------------------------------------------- unlock sheet
     if (showUnlockSheet) {
+        val sessionType = (timerState as? TimerState.ActiveLocked)?.triggerType ?: TriggerType.MANUAL
+        val sessionKey = viewModel.activeTriggerValue
+        val accent = when (sessionType) {
+            TriggerType.NFC -> LockInPalette.Mint
+            else -> LockInPalette.Cyan
+        }
+
+        // Ending a session with a different key than it started with is the
+        // whole point of the lock, so the check compares value *and* type.
+        val acceptKey: (String) -> Unit = { candidate ->
+            if (sessionKey == null || sessionKey.equals(candidate, ignoreCase = true)) {
+                showUnlockSheet = false
+                viewModel.stopSession(context)
+                onNavigateBack()
+            } else {
+                unlockError = "That's a different key — this session was opened with " +
+                    "${sessionType.displayName.lowercase()} \"${sessionKey?.take(14)}\". Use the same one."
+            }
+        }
+
         Dialog(
             onDismissRequest = { showUnlockSheet = false },
             properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -218,7 +242,7 @@ fun ActiveSessionOverlay(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column {
-                            GlassMicroLabel(text = "PHYSICAL KEY REQUIRED")
+                            GlassMicroLabel(text = "${sessionType.displayName.uppercase()} REQUIRED")
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Unlock Early",
@@ -247,29 +271,59 @@ fun ActiveSessionOverlay(
 
                     Spacer(modifier = Modifier.height(22.dp))
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .border(1.dp, GlassTokens.rimLight(LockInPalette.Cyan), RoundedCornerShape(24.dp)),
-                    ) {
-                        CameraBarcodeScannerView(onBarcodeDetected = { scannedValue ->
-                            val expected = viewModel.activeTriggerValue
-                            if (expected == null || expected.equals(scannedValue, ignoreCase = true)) {
-                                showUnlockSheet = false
-                                viewModel.stopSession(context)
-                                onNavigateBack()
-                            } else {
-                                unlockError = "That key doesn't match this session."
+                    if (sessionType == TriggerType.NFC) {
+                        LaunchedEffect(sessionType, activity) {
+                            if (activity == null) return@LaunchedEffect
+                            viewModel.observeCardUid(activity).collect { uid -> acceptKey(uid) }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(accent.copy(alpha = 0.08f))
+                                .border(1.dp, GlassTokens.rimLight(accent), RoundedCornerShape(24.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Filled.Contactless,
+                                    contentDescription = "Tap card",
+                                    tint = accent,
+                                    modifier = Modifier.size(54.dp),
+                                )
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Text(
+                                    text = "Tap the card you started with",
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = LockInPalette.TextSecondary,
+                                )
                             }
-                        })
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .border(1.dp, GlassTokens.rimLight(accent), RoundedCornerShape(24.dp)),
+                        ) {
+                            CameraBarcodeScannerView(onBarcodeDetected = { scannedValue ->
+                                acceptKey(scannedValue)
+                            })
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
-                        text = unlockError ?: "Point the camera at your registered barcode key.",
+                        text = unlockError ?: if (sessionType == TriggerType.NFC) {
+                            "Hold the same card against the back of the phone."
+                        } else {
+                            "Point the camera at the same barcode you started with."
+                        },
                         fontSize = 11.5.sp,
                         color = if (unlockError != null) LockInPalette.Coral else LockInPalette.TextTertiary,
                         textAlign = TextAlign.Center,
@@ -353,6 +407,7 @@ fun ActiveSessionOverlay(
 private fun ArmingScreen(
     state: TimerState.ArmingTrigger,
     activity: Activity?,
+    keyError: String?,
     onBarcodeScanned: (String) -> Boolean,
     onCancel: () -> Unit,
     onStartNfcListening: (Activity) -> Unit,
@@ -370,8 +425,6 @@ private fun ArmingScreen(
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LockInAmbientBackground()
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -511,23 +564,39 @@ private fun ArmingScreen(
                 }
             }
 
-            GlassButton(
-                onClick = onCancel,
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                containerColor = LockInPalette.SurfaceTint.copy(alpha = 0.06f),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
+                if (keyError != null) {
                     Text(
-                        text = "Cancel Session",
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = LockInPalette.TextSecondary,
+                        text = keyError,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = LockInPalette.Coral,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 12.dp),
                     )
+                }
+
+                GlassButton(
+                    onClick = onCancel,
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = LockInPalette.SurfaceTint.copy(alpha = 0.06f),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "Cancel Session",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = LockInPalette.TextSecondary,
+                        )
+                    }
                 }
             }
         }
@@ -550,6 +619,7 @@ private fun SessionResultScreen(
         LockInAmbientBackground(
             glowPrimary = if (isFailure) LockInPalette.AmbientCrimson else LockInPalette.AmbientBlue,
             glowSecondary = LockInPalette.AmbientBlue,
+            drawWash = false,
         )
 
         Column(

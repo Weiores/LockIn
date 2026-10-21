@@ -10,3 +10,12 @@ enum class TriggerType {
     WIFI,
     MANUAL,
 }
+
+/** Short human name for the lock type, used wherever the armed key is shown. */
+val TriggerType.displayName: String
+    get() = when (this) {
+        TriggerType.BARCODE -> "Barcode"
+        TriggerType.NFC -> "Card"
+        TriggerType.WIFI -> "Wi-Fi"
+        TriggerType.MANUAL -> "Manual"
+    }

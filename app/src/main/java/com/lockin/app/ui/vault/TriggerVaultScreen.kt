@@ -63,9 +63,7 @@ import com.lockin.app.domain.model.TriggerType
 import com.lockin.app.ui.components.GlassBadge
 import com.lockin.app.ui.components.GlassButton
 import com.lockin.app.ui.components.GlassCard
-import com.lockin.app.ui.components.GlassIconButton
 import com.lockin.app.ui.components.GlassSectionHeader
-import com.lockin.app.ui.components.LockInAmbientBackground
 import com.lockin.app.ui.components.StatusDot
 import com.lockin.app.ui.theme.GlassRadius
 import com.lockin.app.ui.theme.GlassTokens
@@ -95,8 +93,6 @@ fun TriggerVaultScreen(
     val enabledStates = remember { mutableStateMapOf<Long, Boolean>() }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LockInAmbientBackground()
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -106,25 +102,12 @@ fun TriggerVaultScreen(
         ) {
             // ------------------------------------------------------------ header
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "Trigger Vault",
-                        style = GlassType.ScreenTitle,
-                        color = LockInPalette.HeaderInk,
-                    )
-                    GlassIconButton(
-                        icon = Icons.Filled.QrCodeScanner,
-                        contentDescription = "Scan a new key",
-                        onClick = onOpenBarcodeScanner,
-                        size = 42.dp,
-                        tint = LockInPalette.HeaderInk,
-                        onSky = true,
-                    )
-                }
+                Text(
+                    text = "Trigger Vault",
+                    style = GlassType.ScreenTitle,
+                    color = LockInPalette.HeaderInk,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
 
             // -------------------------------------------------- saved keys header

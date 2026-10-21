@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Contactless
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -37,11 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lockin.app.domain.model.GoalProgress
 import com.lockin.app.domain.model.TimerState
+import com.lockin.app.domain.model.TriggerType
+import com.lockin.app.domain.model.displayName
 import com.lockin.app.ui.components.GlassCard
 import com.lockin.app.ui.components.GlassMicroLabel
 import com.lockin.app.ui.components.GlassPill
 import com.lockin.app.ui.components.GlowingRingCanvas
-import com.lockin.app.ui.components.LockInAmbientBackground
 import com.lockin.app.ui.components.StatusDot
 import com.lockin.app.ui.theme.GlassRadius
 import com.lockin.app.ui.theme.GlassTokens
@@ -75,8 +77,6 @@ fun ActiveLockedScreen(
     val liveGoal = goal?.let { it.copy(focusedMinutes = it.focusedMinutes + elapsedMinutes) }
 
     Box(modifier = modifier.fillMaxSize()) {
-        LockInAmbientBackground()
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -193,7 +193,11 @@ fun ActiveLockedScreen(
                             modifier = Modifier.weight(1f),
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.QrCodeScanner,
+                                imageVector = if (state.triggerType == TriggerType.NFC) {
+                                    Icons.Filled.Contactless
+                                } else {
+                                    Icons.Filled.QrCodeScanner
+                                },
                                 contentDescription = null,
                                 tint = LockInPalette.Cyan,
                                 modifier = Modifier.size(17.dp),
@@ -204,6 +208,15 @@ fun ActiveLockedScreen(
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = LockInPalette.TextSecondary,
+                                maxLines = 1,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = state.triggerType.displayName,
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 0.6.sp,
+                                color = LockInPalette.Cyan.copy(alpha = 0.85f),
                                 maxLines = 1,
                             )
                         }

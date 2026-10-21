@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.lockin.app.domain.model.AccentScheme
 import com.lockin.app.domain.model.ThemeMode
@@ -51,6 +54,10 @@ class MainActivity : ComponentActivity() {
             val themeMode by preferencesRepository.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
             val accentScheme by preferencesRepository.accentScheme.collectAsState(initial = AccentScheme.BLUE)
 
+            // Survives rotation: the startup screen belongs to a cold start, not
+            // to every configuration change.
+            var showSplash by rememberSaveable { mutableStateOf(true) }
+
             LockInTheme(mode = themeMode, scheme = accentScheme) {
                 Box(
                     modifier = Modifier
@@ -58,6 +65,10 @@ class MainActivity : ComponentActivity() {
                         .background(MaterialTheme.colorScheme.background),
                 ) {
                     LockInNavGraph()
+
+                    if (showSplash) {
+                        StartupSplash(onFinished = { showSplash = false })
+                    }
                 }
             }
         }
